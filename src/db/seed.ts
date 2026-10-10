@@ -1,0 +1,188 @@
+/**
+ * Seeder for the vertical slice. Reads the frozen discovery artefacts so the
+ * database always starts from the same verified numbers:
+ *   - seed-ingredient-rates.json   (ADR-026 provisional rates + provenance)
+ *   - ifct2017-mapped-nutrients.json (ADR-007 primary source, values ×100)
+ *   - seed-premade-recipes.json    (blend compositions in bps)
+ *
+ * The four ingredients with no IFCT profile (psyllium, kuttu, chia, pumpkin)
+ * are inserted WITHOUT nutrition rows on purpose: the engine hard-fails
+ * (INCOMPLETE_INGREDIENT_DATA) if they enter a mix, which is the honest
+ * behaviour until USDA fallback values land (ADR-007).
+ */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { LibSQLDatabase } from 'drizzle-orm/libsql';
+import { ingredientNutrition, ingredients, productRecipeLines, productVariants, products, stores, users } from './schema';
+
+export const SEED_STORE_ID = 'st_knp_01';
+
+/** ingredient id → key in ifct2017-mapped-nutrients.json */
+const NUTRIENT_PROFILE: Record<string, string> = {
+  'RM-001': 'Whole Wheat (Sharbati)',
+  'RM-002': 'Barley (Jau)',
+  'RM-003': 'Barley (Jau)',
+  'RM-004': 'Bengal gram whole (Kala Chana)',
+  'RM-005': 'Bengal gram whole (Kala Chana)',
+  'RM-006': 'Soya bean',
+  'RM-007': 'Jowar',
+  'RM-008': 'Ragi',
+  'RM-009': 'Bajra',
+  'RM-010': 'Linseed (Alsi)',
+  'RM-013': 'Green gram dal (Moong)',
+  'RM-015': 'Gingelly/Sesame white (Til)',
+  'RM-017': 'Sunflower seeds',
+  'RM-018': 'Fenugreek seeds (Methi)',
+};
+
+/** category / base-grain flag / cap per ingredient (Master Prices + ADR-013). */
+/**
+ * category / base-grain flag / cap per ingredient (Master Prices + ADR-013).
+ * `base` follows the sheet's OWN category label verbatim: only RM-001 is
+ * 'Base Grain'. Millets/barley are grains but not the base flour — the domain
+ * golden (Everyday = 7500 bps base) encodes the same rule. Admin-editable
+ * per store anyway (is_base_grain column).
+ */
+const META: Record<string, { category: string; base: boolean; cap: number | null }> = {
+  'RM-001': { category: 'Base Grain', base: true, cap: null },
+  'RM-002': { category: 'Standard Grain', base: false, cap: null },
+  'RM-003': { category: 'Premium Grain', base: false, cap: null },
+  'RM-004': { category: 'Standard Pulse', base: false, cap: null },
+  'RM-005': { category: 'Premium Pulse', base: false, cap: null },
+  'RM-006': { category: 'High-Protein Legume', base: false, cap: null },
+  'RM-007': { category: 'Millet', base: false, cap: null },
+  'RM-008': { category: 'Millet', base: false, cap: null },
+  'RM-009': { category: 'Millet', base: false, cap: null },
+  'RM-010': { category: 'Oilseed / Omega-3', base: false, cap: null },
+  'RM-011': { category: 'Soluble Fiber', base: false, cap: 300 }, // psyllium ≤ 3%
+  'RM-012': { category: 'Gluten-Free Grain', base: false, cap: null },
+  'RM-013': { category: 'Pulse', base: false, cap: null },
+  'RM-014': { category: 'Seed', base: false, cap: 1500 }, // seeds ≤ 15%
+  'RM-015': { category: 'Seed', base: false, cap: 1500 },
+  'RM-016': { category: 'Seed', base: false, cap: 1500 },
+  'RM-017': { category: 'Seed', base: false, cap: 1500 },
+  'RM-018': { category: 'Spice Seed', base: false, cap: null },
+};
+
+const PREMADE: Record<string, { name: string; slug: string; sell10: number; cost10: number; provisional?: boolean }> = {
+  everyday: { name: 'ArogyaBhog Everyday Atta', slug: 'everyday-atta', sell10: 95000, cost10: 55650 },
+  sugar_care: { name: 'ArogyaBhog Sugar Care Atta', slug: 'sugar-care-atta', sell10: 125000, cost10: 70600 },
+  high_protein: { name: 'ArogyaBhog High-Protein Fitness Atta', slug: 'high-protein-atta', sell10: 135000, cost10: 73100 },
+  thyro_care: { name: 'ArogyaBhog Thyro-Care Atta', slug: 'thyro-care-atta', sell10: 165000, cost10: 125500 },
+  // Dashboard MRP cell is corrupt; midpoint of the sheet's 1100/1400 band (ADR-026).
+  vitality: { name: 'ArogyaBhog Vitality Atta', slug: 'vitality-atta', sell10: 125000, cost10: 97500, provisional: true },
+};
+
+interface RateRow {
+  ingredient_id: string;
+  name: string;
+  cost_paise_per_kg: number;
+  cost_source: string;
+  sell_paise_per_kg: number;
+  sell_source: string;
+  rates_provisional: boolean;
+  review_note: string;
+}
+
+function readJson(rel: string): unknown {
+  return JSON.parse(readFileSync(join(process.cwd(), rel), 'utf8'));
+}
+
+export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
+  const rates = readJson('discovery/seed-ingredient-rates.json') as RateRow[];
+  const nutrients = readJson('discovery/ifct2017-mapped-nutrients.json') as Record<
+    string,
+    Record<string, unknown>
+  >;
+  const recipes = readJson('discovery/seed-premade-recipes.json') as Record<
+    string,
+    { lines: Array<{ ingredient_id: string; ratio_bps: number }> }
+  >;
+
+  await db.insert(stores).values({
+    id: SEED_STORE_ID,
+    name: 'ArogyaBhog Kanpur',
+    city: 'Kanpur, UP',
+    allowedPackSizesG: JSON.stringify([5000, 10000, 15000, 20000]),
+    minBaseGrainBps: 6000,
+    millingFeePaisePerKg: 400,
+    packagingFeePaise: 500,
+    deliveryFeePaise: 5000,
+    gstRateBps: 500,
+  });
+
+  await db.insert(users).values({
+    id: 'us_admin_seed',
+    role: 'ADMIN',
+    storeId: null,
+    email: 'owner@arogyabhog.local',
+    passwordHash: 'REPLACE_AT_DEPLOY',
+    displayName: 'Owner',
+    referralCode: 'OWNER0001',
+    freeDeliveryCredits: 1,
+  });
+
+  for (const r of rates) {
+    const meta = META[r.ingredient_id];
+    if (!meta) throw new Error(`seed: no META for ${r.ingredient_id}`);
+    await db.insert(ingredients).values({
+      id: r.ingredient_id,
+      storeId: SEED_STORE_ID,
+      name: r.name,
+      category: meta.category,
+      isBaseGrain: meta.base,
+      maxPctBps: meta.cap,
+      costPaisePerKg: r.cost_paise_per_kg,
+      sellPaisePerKg: r.sell_paise_per_kg,
+      costSource: r.cost_source,
+      sellSource: r.sell_source,
+      ratesProvisional: r.rates_provisional,
+      reviewNote: r.review_note || null,
+    });
+
+    const profileKey = NUTRIENT_PROFILE[r.ingredient_id];
+    if (!profileKey) continue; // USDA-pending ingredient: no nutrition rows, on purpose
+    const profile = nutrients[profileKey];
+    if (!profile) throw new Error(`seed: missing IFCT profile ${profileKey}`);
+    const rows = Object.entries(profile)
+      .filter(([k, v]) => typeof v === 'number' && k !== 'ifct_code')
+      .map(([k, v]) => ({
+        ingredientId: r.ingredient_id,
+        nutrientKey: k,
+        valueX100: Math.round((v as number) * 100),
+        source: String(profile.source ?? 'IFCT-2017 (ICMR-NIN)'),
+        sourceCode: typeof profile.ifct_code === 'string' ? profile.ifct_code : null,
+      }));
+    if (rows.length === 0) throw new Error(`seed: empty nutrition for ${profileKey}`);
+    await db.insert(ingredientNutrition).values(rows);
+  }
+
+  for (const [key, p] of Object.entries(PREMADE)) {
+    const recipe = recipes[key];
+    if (!recipe) throw new Error(`seed: missing recipe ${key}`);
+    const productId = `pr_${key}`;
+    await db.insert(products).values({
+      id: productId,
+      storeId: SEED_STORE_ID,
+      name: p.name,
+      slug: p.slug,
+      description: null,
+    });
+    await db.insert(productVariants).values({
+      id: `pv_${key}_10`,
+      productId,
+      packSizeG: 10000,
+      costPaise: p.cost10,
+      sellPaise: p.sell10,
+      sellSource: p.provisional ? 'seed_sheet_midpoint' : 'client_sheet_2026',
+      provisional: Boolean(p.provisional),
+    });
+    await db.insert(productRecipeLines).values(
+      recipe.lines.map((l) => ({
+        productId,
+        ingredientId: l.ingredient_id,
+        ratioBps: l.ratio_bps,
+      })),
+    );
+  }
+}

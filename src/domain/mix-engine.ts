@@ -165,7 +165,8 @@ export type MixErrorCode =
   | 'INVALID_PACK_SIZE'
   | 'INGREDIENT_TOO_SMALL'
   | 'BASE_GRAIN_BELOW_MINIMUM'
-  | 'INGREDIENT_OVER_CAP';
+  | 'INGREDIENT_OVER_CAP'
+  | 'STORE_NOT_FOUND';
 
 /**
  * A domain rejection. Always carries a machine-readable `code` and enough

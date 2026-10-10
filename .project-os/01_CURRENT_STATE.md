@@ -114,3 +114,11 @@ writing code against an unreviewed schema means rewriting it.
    accepted by the client; still advise an FSSAI/CA opinion before paid traffic.
 4. **Forest accent approved** (ADR-025) — one darker colour, careful-use rules.
 5. **Stack locked:** Bundle A (ADR-023) + Drizzle (ADR-024); runtime pinned.
+6. **Vertical slice landed (2026-10-11):** Drizzle schema (10 tables) + migration
+   `migrations/0000_black_puma.sql` + seeder from the frozen discovery artefacts
+   + `POST /api/storefront/mix/calculate` (Zod → service → engine) + 9
+   integration tests over migrated in-process libSQL. **63/63 tests green.**
+   Notes: only RM-001 is base grain (sheet's own 'Base Grain' label); service
+   golden prices at ADR-026 seed sell rates (raw 88550), the sheet-cost golden
+   (46650) lives in the domain suite; CGST is floored, odd paisa to SGST.
+   History graph tool: `npm run graph` → `.project-os/10_HISTORY_GRAPH.md`.

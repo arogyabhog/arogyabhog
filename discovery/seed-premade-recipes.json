@@ -1,0 +1,179 @@
+{
+ "everyday": {
+  "lines": [
+   {
+    "ingredient_id": "RM-001",
+    "ratio_bps": 7500
+   },
+   {
+    "ingredient_id": "RM-004",
+    "ratio_bps": 800
+   },
+   {
+    "ingredient_id": "RM-002",
+    "ratio_bps": 500
+   },
+   {
+    "ingredient_id": "RM-006",
+    "ratio_bps": 400
+   },
+   {
+    "ingredient_id": "RM-007",
+    "ratio_bps": 300
+   },
+   {
+    "ingredient_id": "RM-008",
+    "ratio_bps": 200
+   },
+   {
+    "ingredient_id": "RM-009",
+    "ratio_bps": 200
+   },
+   {
+    "ingredient_id": "RM-010",
+    "ratio_bps": 100
+   }
+  ],
+  "ratio_bps_total": 10000
+ },
+ "sugar_care": {
+  "lines": [
+   {
+    "ingredient_id": "RM-001",
+    "ratio_bps": 5000
+   },
+   {
+    "ingredient_id": "RM-003",
+    "ratio_bps": 1500
+   },
+   {
+    "ingredient_id": "RM-005",
+    "ratio_bps": 1000
+   },
+   {
+    "ingredient_id": "RM-007",
+    "ratio_bps": 800
+   },
+   {
+    "ingredient_id": "RM-006",
+    "ratio_bps": 500
+   },
+   {
+    "ingredient_id": "RM-008",
+    "ratio_bps": 500
+   },
+   {
+    "ingredient_id": "RM-009",
+    "ratio_bps": 400
+   },
+   {
+    "ingredient_id": "RM-010",
+    "ratio_bps": 300
+   }
+  ],
+  "ratio_bps_total": 10000
+ },
+ "thyro_care": {
+  "lines": [
+   {
+    "ingredient_id": "RM-012",
+    "ratio_bps": 4000
+   },
+   {
+    "ingredient_id": "RM-007",
+    "ratio_bps": 2500
+   },
+   {
+    "ingredient_id": "RM-013",
+    "ratio_bps": 1500
+   },
+   {
+    "ingredient_id": "RM-008",
+    "ratio_bps": 1000
+   },
+   {
+    "ingredient_id": "RM-014",
+    "ratio_bps": 500
+   },
+   {
+    "ingredient_id": "RM-010",
+    "ratio_bps": 500
+   }
+  ],
+  "ratio_bps_total": 10000
+ },
+ "high_protein": {
+  "lines": [
+   {
+    "ingredient_id": "RM-001",
+    "ratio_bps": 6000
+   },
+   {
+    "ingredient_id": "RM-006",
+    "ratio_bps": 1500
+   },
+   {
+    "ingredient_id": "RM-005",
+    "ratio_bps": 1200
+   },
+   {
+    "ingredient_id": "RM-003",
+    "ratio_bps": 800
+   },
+   {
+    "ingredient_id": "RM-010",
+    "ratio_bps": 300
+   },
+   {
+    "ingredient_id": "RM-011",
+    "ratio_bps": 200
+   }
+  ],
+  "ratio_bps_total": 10000
+ },
+ "vitality": {
+  "lines": [
+   {
+    "ingredient_id": "RM-001",
+    "ratio_bps": 5000
+   },
+   {
+    "ingredient_id": "RM-005",
+    "ratio_bps": 1500
+   },
+   {
+    "ingredient_id": "RM-003",
+    "ratio_bps": 1000
+   },
+   {
+    "ingredient_id": "RM-008",
+    "ratio_bps": 1000
+   },
+   {
+    "ingredient_id": "RM-016",
+    "ratio_bps": 500
+   },
+   {
+    "ingredient_id": "RM-015",
+    "ratio_bps": 300
+   },
+   {
+    "ingredient_id": "RM-010",
+    "ratio_bps": 300
+   },
+   {
+    "ingredient_id": "RM-017",
+    "ratio_bps": 200
+   },
+   {
+    "ingredient_id": "RM-018",
+    "ratio_bps": 100
+   },
+   {
+    "ingredient_id": "RM-011",
+    "ratio_bps": 100
+   }
+  ],
+  "ratio_bps_total": 10000
+ }
+}

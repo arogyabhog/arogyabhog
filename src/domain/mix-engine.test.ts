@@ -368,13 +368,24 @@ describe('property: pricing integrity', () => {
     );
   });
 
-  it('each line price is within 1 paise of its exact rational share', () => {
+  /**
+   * Per-line display deviation bound. TWO integer-rounding stages exist and
+   * both are unavoidable in integer paise: (a) the mix total is rounded to a
+   * whole paisa (|raw - Σexact| ≤ 0.5), and (b) that integer total is allocated
+   * across lines by largest remainder (|line - proportional share| < 1).
+   * Combined worst case is therefore ~1.5 paise, so the honest bound is 2 —
+   * an earlier "≤ 1" asserted a tighter bound than integer arithmetic can
+   * guarantee and was falsified by the fuzzer. The HARD invariant is elsewhere:
+   * Σ linePaise === rawPaise EXACTLY (tested above), so the customer never sees
+   * lines that fail to add up. A ≤2 paise wobble on a ₹500 line is invisible.
+   */
+  it('each line price is within 2 paise of its exact rational share', () => {
     fc.assert(
       fc.property(arbValidMix(), (m) => {
         const r = runMix(m);
         r.composition.forEach((c) => {
           const exact = (c.weightG * c.sellRatePaisePerKg) / 1000;
-          expect(Math.abs(c.linePaise - exact)).toBeLessThanOrEqual(1);
+          expect(Math.abs(c.linePaise - exact)).toBeLessThanOrEqual(2);
         });
       }),
       { numRuns: 300 },
