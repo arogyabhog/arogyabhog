@@ -38,3 +38,4 @@ uploads/
 .local/
 *.log
 .DS_Store
+.ssh/
