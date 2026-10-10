@@ -33,7 +33,9 @@ Conventions (see `00_SYSTEM_RULES.md` R1):
 | `milling_fee_paise_per_kg` | int | default `400` (ADR-010) |
 | `gst_rate_bps` | int | default `500` |
 | `min_base_grain_bps` | int | default `6000` (ADR-013) |
-| `allowed_pack_sizes_g` | json | `[5000,10000,15000,20000]` |
+| `referral_credit_cap` | int | default `10` (ADR-017) |
+| `referee_bonus_credits` | int | default `1` — extra credits when joining via a code (ADR-017) |
+| `allowed_pack_sizes_g` | json | `[5000,10000,15000,20000]` — **mix sizes.** Standard products are `10000/15000/20000` only (ADR-021) |
 | `is_active` | bool | |
 | `created_at`, `updated_at` | timestamptz | |
 
@@ -47,7 +49,7 @@ Conventions (see `00_SYSTEM_RULES.md` R1):
 | `name` | text | |
 | `role` | text enum | `ADMIN` \| `MANAGER` \| `CUSTOMER` (ADR-014) |
 | `referral_code` | text UNIQUE | stable, non-guessable (ADR-017) |
-| `free_delivery_credits` | int | default `1` for new accounts |
+| `free_delivery_credits` | int | default `1`; `1 + store.referee_bonus_credits` when `referred_by_user_id` is set (ADR-017) |
 | `referred_by_user_id` | uuid FK→users NULL | |
 | `is_active` | bool | |
 | `created_at`, `last_login_at` | timestamptz | |
@@ -274,12 +276,25 @@ in each custom mix, inside the same transaction as order creation.
 `coupon_id` FK, `order_id` FK, `user_id` FK, `discount_paise` int, `redeemed_at`.
 PK `(coupon_id, order_id)`. Enforces `per_user_limit` via count.
 
-### `referrals`  — append-only (ADR-017, ⚠️ semantics pending BLOCKER-2)
+### `referrals`  — append-only (ADR-017, ✅ resolved 2026-10-10)
 `id`, `referrer_user_id` FK, `referee_user_id` FK **UNIQUE**,
 `status` enum (`PENDING` `CREDITED` `REJECTED`), `created_at`,
 `credited_at` NULL, `credited_order_id` FK NULL, `reject_reason` NULL.
 `UNIQUE(referee_user_id)` — a user can only ever be referred once.
 Self-referral blocked by CHECK (`referrer_user_id <> referee_user_id`).
+
+**Lifecycle:** row created `PENDING` at referee signup → flipped to `CREDITED`
+when the referee's **first order reaches `DELIVERED`**, at which point the
+referrer's `free_delivery_credits` increments **only if below
+`store.referral_credit_cap`**. Awarding on a delivered order rather than on signup
+is the primary abuse control — fake accounts never produce a delivered order.
+Both the referral and the credit increment are written to `audit_log`.
+
+> Concurrency note: the credit increment and the status flip must happen in the
+> **same transaction** as the order's `DELIVERED` transition, and the increment
+> must be a guarded conditional update (`WHERE credits < cap`). Otherwise two
+> concurrent deliveries for the same referrer can both read the same count and
+> over-award past the cap. This is a property test, not a comment.
 
 ---
 

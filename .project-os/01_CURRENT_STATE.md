@@ -1,9 +1,9 @@
 # 01 — CURRENT STATE
 
-**Phase:** 2 — ARCHITECTURE (schema drafted, awaiting review)
+**Phase:** 3 — VERTICAL SLICE (calculation engine built & verified; UI not started)
 **Last updated:** 2026-10-10
-**Git SHA:** see `git log` (repo initialised this phase)
-**Active branch:** `main` (no feature work started yet)
+**Git SHA:** see `git log`
+**Active branch:** `main`
 
 ---
 
@@ -15,43 +15,44 @@
 | Requirement clarification | ✅ COMPLETE — C1–C7 resolved by client |
 | Nutrition data sourcing | ✅ RESEARCHED — IFCT 2017 obtained, coverage measured, gaps identified |
 | Payment approach | ✅ DECIDED — COD + unsigned UPI intent QR, admin-verified (ADR-006) |
-| Pricing model | ⚠️ DECIDED but **has an unresolved consistency problem** (see BLOCKER-1) |
+| Pricing model | ✅ DECIDED — admin sets 18 rates by hand + mandatory Price Consistency Checker (ADR-008) |
+| Referral system | ✅ DECIDED — credits on first DELIVERED order, cap 10, referee bonus (ADR-017) |
+| Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
 | Database schema | 🟡 DRAFTED in `04_DATABASE_SCHEMA.md` — awaiting review |
 | API contracts | 🟡 DRAFTED in `06_API_CONTRACTS.md` — awaiting review |
-| Referral system | ⚠️ REQUESTED — 4 decisions outstanding (see BLOCKER-2) |
-| Toolchain / scaffold | ❌ NOT STARTED — deliberately held |
-| Product code | ❌ NOT STARTED — deliberately held |
-| Brand / logo / theme | ❌ BLOCKED on client supplying logo |
+| **Calculation engine** | ✅ **BUILT & VERIFIED** — `src/domain/mix-engine.ts`, **54 tests green** incl. fast-check property suites and the client's real defects as regression tests |
+| Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
+| Brand / logo / theme | ✅ RECEIVED & SYSTEMISED — `07_DESIGN_SYSTEM.md` + `brand-board.html` |
+| UI layer | ❌ NOT STARTED — awaiting theme sign-off |
 
 ---
 
 ## 🔴 BLOCKERS
 
-### BLOCKER-1 — Custom-mix vs standard-product price inconsistency
-The client's chosen pricing rule (mix price = Σ ingredient × ingredient *selling*
-rate) **cannot be made consistent with standard product MRPs using a single
-uniform ingredient markup.** Verified numerically — see
-`discovery/FINDINGS.md` §3 and ADR-008.
+### ~~BLOCKER-1~~ → RESOLVED as a design question; now a **client data dependency**
+Client chose: admin sets all 18 ingredient selling rates **by hand**, with the
+Price Consistency Checker flagging divergence (ADR-008). Schema, engine and API
+are unaffected. **The Lab cannot go live with correct prices until those 18 rates
+exist** — that is a data-entry task for the client, and the checker is now
+mandatory rather than merely advisable.
 
-Requires a client decision on how ingredient selling rates are set.
-**Not schema-blocking** (schema supports either answer), but it is
-**launch-blocking**: it is a customer-visible price contradiction on a single page.
+### ~~BLOCKER-2~~ → ✅ RESOLVED (ADR-017)
+Referral credits awarded on the referee's **first `DELIVERED` order** (not signup),
+referrer **capped at 10** credits (admin-configurable), referee who joins via a
+code starts with **2** credits, and a delivery credit **may** stack with a discount
+coupon. All abuse controls specified.
 
-### BLOCKER-2 — Referral system: 4 open decisions
-Award trigger, cap, stacking, and abuse controls. See `03_DECISION_LOG.md` ADR-017.
-**Schema-blocking** for the `referrals` table semantics.
-
-### BLOCKER-3 — FSSAI position on product naming
+### BLOCKER-3 — FSSAI position on product naming  🔴 STILL OPEN
 "Sugar Care" / "Thyro-Care" imply disease management. Client has not confirmed
 whether FSSAI licensing or naming advice has been obtained.
-**Not build-blocking** (names are editable content), but **launch-blocking**.
+**Not build-blocking** (names are editable content per ADR-020), but
+**launch-blocking**. Requires the client to raise it with the owner.
 
-### BLOCKER-4 — Standard-product pack sizes, commercially
-Client stated 5 kg is available **only** for custom mixes, so standard products
-sell at 10 / 15 / 20 kg. Minimum standard order therefore ≈ ₹950.
-The source spreadsheet priced standard products at 1 kg and 5 kg.
-Confirm this is intentional — it raises the barrier to a first purchase
-significantly for a pre-launch brand.
+### ~~BLOCKER-4~~ → ✅ RESOLVED (ADR-021)
+Confirmed: **standard products are 10/15/20 kg only; 5 kg is custom-mix only.**
+Minimum standard order ≈ ₹950. Commercial risk noted and accepted by the client;
+the 5 kg custom mix (~₹400–500) is the low-cost entry point instead. Revisit with
+post-launch data, not now.
 
 ---
 

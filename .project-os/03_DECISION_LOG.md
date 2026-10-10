@@ -423,7 +423,7 @@ looking at the site; email alone is insufficient because it can be missed. Both.
 
 ---
 
-## ADR-017 · 2026-10-10 · Referral system: free-delivery credits  ⚠️ 4 DECISIONS OPEN
+## ADR-017 · 2026-10-10 · Referral system: free-delivery credits  ✅ RESOLVED
 **Problem:** Client requested an invite-coupon system: every new account gets
 **first delivery free** and receives a code; when someone signs up with that code
 the **referrer earns another free delivery**; repeatable; every user has a code.
@@ -433,29 +433,47 @@ issued coupon codes. Credits are simpler, cannot leak or be shared as strings,
 and naturally express "and so on". Every user gets a stable, unique,
 non-guessable `referral_code`. A `referrals` table records referrer → referee.
 
-**🔴 Four decisions required (BLOCKER-2):**
+**✅ All four decisions resolved by the client, 2026-10-10:**
 
-1. **Award trigger.** Client said "when someone makes an account". Awarding on
-   *signup alone* is trivially abusable — create 50 fake accounts with your own
-   code, collect 50 free deliveries, each costing the client a real ₹50 driver
-   run. **Strong recommendation: award only when the referred user's FIRST order
-   reaches `DELIVERED`.** Same user-visible outcome for honest referrals, and it
-   converts an open-ended liability into a performance-based one.
-2. **Cap.** Unlimited referrals = unlimited free deliveries against a real cash
-   cost. Recommend a configurable cap (e.g. 10 credits) plus admin visibility.
-3. **Stacking.** Can a free-delivery credit combine with a discount coupon? They
-   are different types (delivery vs product) so **yes** — but state it explicitly.
-   And a first order that is *both* COD (unverified intent) *and* free-delivery is
-   the highest-RTO-risk order in the system; consider requiring UPI when a
-   delivery credit is used.
-4. **Referred-user incentive.** As specified, only the *referrer* benefits, so a
-   new visitor has no reason to enter a code. Consider giving the referee a second
-   free delivery when they join via a code — that is what actually drives code
-   sharing. Client's call.
+1. **Award trigger → the referred user's FIRST `DELIVERED` order.** Not on signup.
+   Rationale accepted by client: awarding on signup alone is trivially abusable —
+   create 50 fake accounts with your own code, collect 50 free deliveries, each a
+   real ₹50 driver run. Gating on a delivered order means fake accounts earn
+   nothing, and it converts an open-ended liability into a performance-based one.
+   `referrals.status` therefore runs `PENDING → CREDITED` on the referee's first
+   `DELIVERED` transition, with `credited_order_id` recorded.
+2. **Cap → yes.** Referrer credits capped at `referral_credit_cap` (default **10**),
+   admin-configurable per store. Bounds total exposure at ~₹500 of driver cost per
+   referrer instead of unbounded.
+3. **Stacking → a free-delivery credit MAY combine with a discount coupon** (they
+   are different types: delivery vs product). Recorded explicitly so it is a
+   decision and not an accident. Note the residual risk: a first order that is
+   *both* COD (unverified intent) *and* free-delivery is the highest-RTO-risk order
+   in the system — the client accepted this.
+4. **Referred-user incentive → yes.** A referee who joins **via a code** starts with
+   **2** free-delivery credits instead of 1. Without this, a new visitor has no
+   reason to enter a code at all, and the loop never starts. This is what actually
+   drives sharing.
 
-**Abuse controls adopted regardless:** unique email + phone per account; referee
-recorded once (`UNIQUE(referee_user_id)`) so a user can only ever be referred
-once; self-referral blocked; referral events appended to the audit log.
+**Resulting credit lifecycle:**
+```
+new account (organic)      → 1 credit
+new account (via code)     → 2 credits   + creates referrals row (PENDING)
+referee's 1st DELIVERED    → referrer +1 credit (capped), row → CREDITED
+checkout with credit       → delivery_paise = 0, credits -= 1
+```
+
+**Abuse controls adopted:** unique email + phone per account; `UNIQUE(referee_user_id)`
+so a user can only ever be referred once; self-referral blocked by CHECK constraint;
+credit awarded only on a genuinely delivered order; all referral events appended to
+`audit_log`; admin sees pending-vs-credited plus abuse signals (referee never
+ordered, repeated same-device signups).
+
+**Trade-offs:** Slightly slower gratification for the referrer (they wait for a
+delivery rather than a signup), in exchange for a system that cannot be farmed.
+The referee bonus costs the client one extra ₹50 driver run per converted referral
+— cheap, and it is the only part of the loop that gives a *stranger* a reason to
+participate.
 
 ---
 
@@ -494,6 +512,31 @@ re-evaluated at Phase 4 with `-Xmx512m` against a single service.
 **Trade-offs:** Loses true database-engine fidelity in tests; gains a test suite
 that runs anywhere in seconds. Acceptable because the schema deliberately avoids
 Postgres-specific features (ADR-004), which is what would otherwise diverge.
+
+---
+
+## ADR-021 · 2026-10-10 · Pack sizes: 5 kg is custom-mix only
+**Problem:** The brief said sizes are 5/10/15/20 kg but that "the 5 kg option is
+only for the mixture, not on standard options", while a separate answer said a mix
+must total 10/15/20 kg. Direct contradiction.
+**Decision (client confirmed):**
+
+| Product type | Available pack sizes |
+|---|---|
+| **Standard / premade products** | **10 kg, 15 kg, 20 kg** only |
+| **Custom mix (Lab)** | **5, 10, 15, 20 kg** |
+
+15 kg and 20 kg remain listed for both even though the client expects low uptake.
+`stores.allowed_pack_sizes_g` holds the mix sizes; `product_variants.pack_size_g`
+holds standard sizes.
+
+**Trade-offs — commercially noted, client accepted:** the minimum standard order
+becomes ~₹950 (10 kg Everyday Atta). For a pre-launch brand with no recognition,
+that is a steep first purchase, and the source spreadsheet priced 5 kg standard
+bags at ₹275–₹650. The mitigating factor is that the **5 kg custom mix** does
+provide a low-cost entry point (~₹400–500) — a new customer can start in the Lab
+rather than with a premade 10 kg bag. Recorded so this can be revisited with data
+after launch rather than re-litigated now.
 
 ---
 

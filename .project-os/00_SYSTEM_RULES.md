@@ -111,7 +111,13 @@ after **3 consecutive** failed attempts at the same failure.
 - Conventional Commits: `feat(mix): ...`, `fix(pricing): ...`, `test(nutrition): ...`
 - No commit that fails lint or tests.
 
-### Environment constraint (verified)
+### Environment constraints (verified)
+`node_modules/` is **not persisted between sessions** (it is excluded from the
+workspace snapshot). Therefore every session begins with
+`npm ci` / `npm install` before any verify step. Because all versions are
+exact-pinned, this is deterministic and safe. **Never** treat a missing
+`node_modules` as a broken install.
+
 This sandbox has **no Docker daemon**. Therefore:
 - ❌ Testcontainers unavailable
 - ❌ Containerised Postgres for tests unavailable

@@ -1,0 +1,27 @@
+{
+  "name": "arogyabhog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ArogyaBhog — D2C flour (atta) e-commerce with a custom-blend Lab",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "verify": "npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.9",
+    "fast-check": "3.23.2",
+    "typescript": "5.6.3",
+    "vitest": "2.1.9"
+  }
+}
