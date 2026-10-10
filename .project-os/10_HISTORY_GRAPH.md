@@ -1,12 +1,13 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-10T21:53Z from git. Cheap context for any new session:_
+_Generated 2026-10-10T21:54Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* 21bbb68  (HEAD -> main, origin/main) feat(slice): DB + API vertical slice — schema, migration, seed, mix endpoint
+* dc4954d  (HEAD -> main, origin/main) chore: refresh history graph (fix milestone grep: closing ** after date)
+* 21bbb68  feat(slice): DB + API vertical slice — schema, migration, seed, mix endpoint
 * 536b126  docs: README + competitive research (09); untrack .ssh
 * 53b3c6a  chore: drop duplicate uploads/ (pixel-identical copies live in public/brand); ignore .npm/.cache/.local
 * 361a93d  add: deploy key issued; forest accent (ADR-025); provisional seed rates (ADR-026)
@@ -17,6 +18,9 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
 
 ## Milestones (feat / decide / add commits)
 
+- **2026-10-10** 416c3f7 — feat(mix): verified calculation engine + brand design system
+- **2026-10-10** 361a93d — add: deploy key issued; forest accent (ADR-025); provisional seed rates (ADR-026)
+- **2026-10-10** 21bbb68 — feat(slice): DB + API vertical slice — schema, migration, seed, mix endpoint
 
 
 ## Tracked tree
@@ -66,6 +70,6 @@ vitest.config.ts
 
 ## Head
 
-21bbb68503cb76f86aa33726ca2465d04b39f1ae
-2026-10-10 21:52:54 +0000
-feat(slice): DB + API vertical slice — schema, migration, seed, mix endpoint
+dc4954dc6bda6d20cccc47be0669d4ae65d71ba3
+2026-10-10 21:53:53 +0000
+chore: refresh history graph (fix milestone grep: closing ** after date)
