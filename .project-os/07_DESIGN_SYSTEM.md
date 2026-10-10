@@ -1,5 +1,9 @@
 # 07 — DESIGN SYSTEM (derived from the client's logo, not invented)
 
+> **STATUS: ✅ APPROVED by the client on 2026-10-10 (ADR-022).**
+> The heritage-premium direction below is binding for all UI work. Do not
+> introduce colours, typefaces or radii outside this system without a new ADR.
+
 **Source of truth for the brand:** `uploads/arogyaBhog_logo.png` (mark) and
 `uploads/arogyabhog_name.png` (wordmark + Hindi tagline), copied to
 `public/brand/logo-mark.png` and `public/brand/logo-wordmark.png`.

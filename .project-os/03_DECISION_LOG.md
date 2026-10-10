@@ -552,3 +552,28 @@ from published composition tables*, never as lab-analysed.
 deliberate exchange for regulatory flexibility. **BLOCKER-3:** client to confirm
 FSSAI licensing status and whether naming advice has been obtained. Raised, not
 decided by us.
+
+---
+
+## ADR-022 · 2026-10-10 · Brand tokens are approved and binding for all UI work
+
+**Status:** ✅ RESOLVED (client approved via questionnaire, 2026-10-10)
+
+**Problem:** The client supplied the logo and asked to decide the theme together.
+Brand values (authenticity, purity, transparency, health) needed a visual system
+that is defensible rather than decorative.
+
+**Decision:** The design system in `07_DESIGN_SYSTEM.md` and `brand-board.html`
+is **approved as the heritage-premium direction**. Every token was pixel-sampled
+from the supplied logo: ivory surfaces (`#FCFAF5`), antique-gold accent scale
+(`#E5D3AB → #B28D60 → #6C4E30`), espresso ink (`#1B1811`), earthy functional
+colours; Playfair Display + Manrope + Noto Sans Devanagari; the gold-framed
+"certificate" as the Lab's signature. Contrast ratios are measured (WCAG 2.1)
+and the measured values — not assumptions — govern which tokens may set small
+text. From this point the tokens are **binding**: UI work may not introduce
+colours, faces or radii outside the system without a new ADR.
+
+**Consequences:** `brand-board.html` is the visual contract. The Tailwind theme
+extension in §7 of the design doc is the implementation contract. Deferred items
+remain deferred: no dark-mode variant until launch, logo files live in
+`public/brand/`.

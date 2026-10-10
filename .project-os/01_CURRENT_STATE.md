@@ -22,8 +22,9 @@
 | API contracts | 🟡 DRAFTED in `06_API_CONTRACTS.md` — awaiting review |
 | **Calculation engine** | ✅ **BUILT & VERIFIED** — `src/domain/mix-engine.ts`, **54 tests green** incl. fast-check property suites and the client's real defects as regression tests |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
-| Brand / logo / theme | ✅ RECEIVED & SYSTEMISED — `07_DESIGN_SYSTEM.md` + `brand-board.html` |
-| UI layer | ❌ NOT STARTED — awaiting theme sign-off |
+| Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
+| Hosting stack | 🟡 **AWAITING CLIENT CHOICE** — Bundle A (free serverless) vs C (own-a-VPS) etc., see `08_STACK_COMPARISON.md` |
+| UI layer | ❌ NOT STARTED — begins after stack decision |
 
 ---
 
