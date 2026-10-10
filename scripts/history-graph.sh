@@ -20,7 +20,7 @@ OUT=.project-os/10_HISTORY_GRAPH.md
   echo
   echo "## Milestones (feat / decide / add commits)"
   echo
-  git log --reverse --date=short --pretty=format:'- **%ad** %h — %s' | grep -E '\*\* [0-9-]+ [0-9a-f]+ — (feat|decide|add)' || true
+  git log --reverse --date=short --pretty=format:'- **%ad** %h — %s' | grep -E '\*\* [0-9-]+\*\* [0-9a-f]+ — (feat|decide|add)' || true
   echo
   echo
   echo "## Tracked tree"
