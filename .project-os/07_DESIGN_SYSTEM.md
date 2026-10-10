@@ -67,6 +67,28 @@ edge. Never as text fill on body copy, never as a card background.
 | `amber-700` | `#8A5A18` | `#F6EDDD` | warning, preparing, payment-pending |
 | `clay-700` | `#8C3A2E` | `#F6E7E4` | danger, cancelled, validation error |
 
+### `forest` — the one darker accent (ADR-025, client-requested)
+A deep botanical green: the functional `leaf` promoted to a brand accent, used
+**sparingly** per the careful-use rules below.
+
+| Token | Hex | Use |
+|---|---|---|
+| `forest-950` | `#12201A` | deepest edge (band borders) |
+| `forest-900` | `#1B2E24` | band border / hover deepen |
+| `forest-800` | `#24402F` | **the forest band** background |
+| `forest-700` | `#2F523C` | forest text on light, chip border |
+| `forest-600` | `#3F6B4F` | icons on light (= leaf hue, family tie) |
+| `forest-100` | `#E4EDE5` | text/chips on forest bands |
+| `forest-50` | `#F1F6F1` | tint behind purity badges |
+
+**Careful-use rules (binding):** (1) at most **one forest band per page**, for
+health/purity/transparency statements — never a page background; (2) never a
+forest band *and* an espresso band on the same page — one dark voice per
+screen; (3) small surfaces: purity/in-stock/referral-credit chips and the Lab's
+positive "base-grain minimum met" state; (4) forest never replaces bronze as
+the primary CTA, never replaces leaf as the success status colour, and never
+enters the metallic gradient.
+
 ---
 
 ## 2 · Verified contrast (WCAG 2.1) — measured, not assumed
@@ -84,6 +106,12 @@ edge. Never as text fill on body copy, never as a card background.
 | `leaf-600` on `leafbg` | 5.10:1 | AA | success |
 | `clay-700` on `claybg` | 6.33:1 | AA | danger |
 | `amber-700` on `warnbg` | 5.08:1 | AA | warning |
+| `ivory-50` on `forest-800` | **10.89:1** | AAA | forest band body text |
+| `ivory-50` on `forest-900` | **13.76:1** | AAA | deepest band |
+| `forest-700` on `ivory-50` | **8.41:1** | AAA | forest text on light |
+| `forest-600` on `ivory-50` | 5.87:1 | AA | icons / large text |
+| `gold-300` on `forest-800` | **7.70:1** | AAA | gold hairline/seal on band |
+| `forest-100` on `forest-800` | 9.49:1 | AAA | chips on band |
 
 Consequences encoded as rules: **gold-600 and ink-400 never set small body text.**
 Primary CTA is bronze-700 with champagne text; the dark CTA (Lab) is ink-900 with
@@ -145,6 +173,8 @@ Letter-spacing: `+0.08em…+0.14em` uppercase 11–12 px eyebrow labels in gold-
 - `rounded-2xl`-plus-pill playfulness; glassmorphism; neon glows.
 - Hindi set in a Latin typeface.
 - Product names or health copy hardcoded in components (ADR-020).
+- Forest as a page background, two dark bands (forest + espresso) on one page,
+  forest as a CTA colour, or forest inside the metallic gradient (ADR-025).
 
 ---
 
@@ -160,6 +190,7 @@ colors: {
   leaf:   { DEFAULT:'#4A6B4F', bg:'#E7EFE6' },
   amber:  { DEFAULT:'#8A5A18', bg:'#F6EDDD' },
   clay:   { DEFAULT:'#8C3A2E', bg:'#F6E7E4' },
+  forest: { 50:'#F1F6F1',100:'#E4EDE5',600:'#3F6B4F',700:'#2F523C',800:'#24402F',900:'#1B2E24',950:'#12201A' },
 },
 fontFamily: {
   display: ['"Playfair Display"','serif'],

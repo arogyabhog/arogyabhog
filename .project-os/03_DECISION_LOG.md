@@ -59,7 +59,7 @@ legal data-residency requirement emerges.
 this environment has **no Docker daemon** (verified). Sandbox has 1.9 GB RAM.
 **Decision:** Development and the entire test suite run against **in-process
 libSQL/SQLite** via a file connection. Production targets **Neon Postgres with a
-pooled connection string** on Vercel. Swap is a `DATABASE_URL` change only.
+pooled connection string** on the chosen Node host (ADR-023: Netlify). Swap is a `DATABASE_URL` change only.
 **Trade-offs:**
 - ✅ Zero-infra integration tests, fast, no daemon, works in CI
 - ✅ Solves the missing-Docker constraint entirely
@@ -577,3 +577,123 @@ colours, faces or radii outside the system without a new ADR.
 extension in §7 of the design doc is the implementation contract. Deferred items
 remain deferred: no dark-mode variant until launch, logo files live in
 `public/brand/`.
+
+---
+
+## ADR-023 · 2026-10-10 · Deployment is Bundle A: Netlify Starter + Neon Free (₹0/mo)
+
+**Status:** ✅ RESOLVED (client chose Bundle A via questionnaire, 2026-10-10)
+
+**Problem:** The client asked to see hosting alternatives side-by-side before
+locking (`08_STACK_COMPARISON.md`). Verification of 2026 free-tier terms
+disqualified the obvious choices: Vercel Hobby **bans commercial use**; Supabase
+Free **pauses after 7 idle days** (fatal for a pre-launch store); Cloudflare
+free caps functions at **10 ms CPU** (cannot hold SSR + a DB round-trip).
+
+**Decision:** **Bundle A.** Next.js (Node functions, not Edge) on **Netlify
+Starter** (free, small-commercial permitted: 100 GB egress, 300 build-min,
+125 K invocations/mo) + **Neon Free** Postgres (permanent, scale-to-zero,
+100 CU-hrs/mo, 0.5 GB, 6 h PITR; nearest free region Singapore) + **Resend**
+free tier for email. Auth and payments stay provider-free by prior ADRs.
+
+**Consequences / accepted risks:**
+- ~0.5 s DB cold start after idle — acceptable pre-launch; mitigated later by
+  keeping a warm ping or moving to a paid compute tier.
+- No Mumbai region on Neon Free → Singapore is the nearest; CDN (Netlify edge,
+  has Indian PoPs) absorbs static latency. Re-evaluate at launch if TTFB hurts.
+- Free-tier policy can change → every piece is portable (Next is host-agnostic,
+  Neon is plain Postgres), so **Bundle C (own-a-VPS) remains the documented exit
+  path**: a `DATABASE_URL` change plus a deploy target change.
+- Netlify function timeout ceiling (~10 s free) is ample for query-backed pages;
+  long jobs (report exports) must be chunked or moved to a cron route.
+
+---
+
+## ADR-024 · 2026-10-10 · Data access layer confirmed as Drizzle after comparison
+
+**Status:** ✅ RESOLVED (client confirmed via questionnaire, 2026-10-10)
+
+**Problem:** Drizzle was *assumed* in ADR-004/019 but never compared on the
+record. The client asked for the stack to be discussed, so the assumption had
+to earn its place.
+
+**Decision:** **Drizzle ORM**, confirmed over Prisma and Kysely:
+- Pure TypeScript, **no engine binary** — Prisma's Rust query engine adds memory
+  and serverless cold-start weight, which this 1.9 GB sandbox and free-tier
+  functions both punish.
+- SQL-first schema-as-code: types mirror columns exactly, which is what the
+  integer-money discipline (R1) needs — a paise column is a `bigint` mode
+  `number`/`bigint` in the type system, not a loose `Decimal`.
+- First-class on **both** libSQL (in-process tests, no Docker) and Postgres
+  (prod), so the dev→prod swap stays a connection-string change.
+- `drizzle-kit` emits readable SQL migrations the CA/auditor can inspect.
+
+Kysely rejected as too much hand-rolled migration/mapping work for ~22 tables;
+raw SQL rejected for the same reason at this size.
+
+---
+
+## ADR-025 · 2026-10-11 · One darker accent joins the palette: forest green, used sparingly
+
+**Status:** ✅ RESOLVED (client requested, 2026-10-11: "add a single darker
+colour in some places and use it carefully, like the green shade you once showed")
+
+**Problem:** The approved heritage palette (ADR-022) is ivory + gold + espresso.
+The client wants one additional darker colour for selective emphasis without
+disturbing the approved direction.
+
+**Decision:** Add a **forest** scale, a deep botanical green, as the single
+additional accent: `forest-950 #12201A · 900 #1B2E24 · 800 #24402F · 700 #2F523C ·
+600 #3F6B4F · 100 #E4EDE5 · 50 #F1F6F1`. It is a darker sibling of the existing
+functional `leaf`, promoted from status-colour to brand accent.
+
+**Measured contrast (WCAG 2.1):** ivory on forest-800 **10.89:1 AAA**; ivory on
+forest-900 **13.76:1 AAA**; forest-700 text on ivory **8.41:1 AAA**; forest-600
+on ivory 5.87:1 AA; **gold-300 on forest-800 7.70:1 AAA** and on forest-900
+9.73:1 AAA (gold hairlines and seals may sit on forest bands).
+
+**Careful-use rules (binding):**
+1. **At most one forest band per page** — a deep-green narrative strip for
+   health/purity/transparency statements (e.g. the IFCT sourcing note, the
+   referral explainer). Never a page background.
+2. **Never a forest band and an espresso band on the same page** — one dark
+   voice per screen.
+3. Small-surface uses: purity/organic badges, "in stock", referral-credit chips,
+   and the Lab's positive "base-grain minimum met" state (forest-100 on
+   forest-800, 9.49:1 AAA).
+4. Forest never replaces bronze as the primary CTA, never replaces leaf as the
+   success status colour, and never appears in the metallic gradient.
+
+**Consequences:** tokens added to `07_DESIGN_SYSTEM.md` §1/§2/§7 and to
+`brand-board.html`. UI work may use forest only per rules 1–4.
+
+---
+
+## ADR-026 · 2026-10-11 · Provisional seed rates unblock the Lab; provenance makes them safe
+
+**Status:** ✅ RESOLVED (client directive, 2026-10-11: "use the ones provided in
+the sheet… or we can get data from market. The client can change it when he will
+get the website.")
+
+**Problem:** ADR-008 requires admin-set selling rates, but the client is
+unreachable and the sheet contains **no per-ingredient selling rates at all** —
+only costs and blend-level selling figures. The Lab cannot build against empty
+rates (R1.3 hard-fails on missing rates by design).
+
+**Decision:** Seed all 18 rows provisionally per the rule in
+`discovery/SEED_RATES.md`: sheet costs verbatim; selling = cost × the home
+blend's own markup (MRP ÷ corrected raw cost), rounded to ₹5; a market guard
+overrides any derived sell above 1.8× a cited 2026 retail band (applied once:
+pumpkin seeds 1700 → 900); methi (absent from the sheet) is market-seeded.
+Provenance columns `cost_source`, `sell_source`, `rates_provisional` on
+`ingredients`; admin edits flip provenance to `client` and clear the flag,
+audit-logged (ADR-015).
+
+**Product behaviour while provisional:** the Lab shows an "indicative pricing"
+chip; the Price Consistency Checker treats provisional rows as warnings, not
+errors. The flagged rows (pumpkin cost above retail, sunflower, sesame, methi,
+Vitality-anchor rows) form the client's guided first-review list.
+
+**Consequences:** BLOCKER-1 downgrades from "client data-entry dependency" to
+"client review of provisional seeds". No derived rate ever ships unflagged; the
+client's hand-set rates remain the only non-provisional source.

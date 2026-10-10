@@ -189,7 +189,7 @@ ever required, the data slices cleanly without a rewrite.
 | | Dev / Test | Production |
 |---|---|---|
 | DB | libSQL file, in-process | Neon Postgres **pooled** |
-| Runtime | Node 20 | Vercel (Node runtime, not Edge — Drizzle + libSQL need Node) |
+| Runtime | Node 20 | Netlify (Node functions, not Edge — Drizzle + libSQL need Node). Host-agnostic: any Node runtime works |
 | Email | logged to console | Resend |
 | Migrations | `drizzle-kit` generate + apply, versioned | applied in deploy step, **never auto-generated in prod** |
 

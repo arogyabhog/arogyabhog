@@ -336,3 +336,20 @@ CSV-exportable for the client's "list of what we changed".
 4. Adding a column to `orders` or `order_items` is 🟡 YELLOW (blast radius: every
    historical invoice). Changing a money column's meaning is 🔴 RED.
 5. Seed jobs are **idempotent** — stable UUIDs + `UPSERT`, safe to re-run (OS §6).
+
+---
+
+## Amendment 2026-10-11 (ADR-026) — ingredient rate provenance
+
+`ingredients` gains three columns so that no derived number can ever pose as a
+client-set one:
+
+| Column | Type | Notes |
+|---|---|---|
+| `cost_source` | TEXT NOT NULL DEFAULT `'client_sheet_2026'` | `'client_sheet_2026'` \| `'market_mandi_2026_08'` \| `'client'` |
+| `sell_source` | TEXT NOT NULL DEFAULT `'seed_home_blend_k'` | `'seed_home_blend_k'` \| `'seed_home_blend_k_on_market_cost'` \| `'market_override'` \| `'client'` |
+| `rates_provisional` | BOOLEAN NOT NULL DEFAULT `true` | cleared only by an admin edit, which also sets `*_source='client'` and writes an audit row |
+
+Seed data: `discovery/seed-ingredient-rates.json` (18 rows, paise, provenance
+per row). CHECK constraint: `sell_paise_per_kg > 0 AND cost_paise_per_kg > 0`
+(R1.3 — a zero rate must be impossible to store, not merely refused by the API).

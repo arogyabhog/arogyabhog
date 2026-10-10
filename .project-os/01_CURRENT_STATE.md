@@ -23,7 +23,7 @@
 | **Calculation engine** | ✅ **BUILT & VERIFIED** — `src/domain/mix-engine.ts`, **54 tests green** incl. fast-check property suites and the client's real defects as regression tests |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
-| Hosting stack | 🟡 **AWAITING CLIENT CHOICE** — Bundle A (free serverless) vs C (own-a-VPS) etc., see `08_STACK_COMPARISON.md` |
+| Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
 | UI layer | ❌ NOT STARTED — begins after stack decision |
 
 ---
@@ -97,3 +97,20 @@ post-launch data, not now.
 No `package.json`, no dependencies installed, no framework scaffold, no migrations,
 no product code. Held until schema review, because C1–C4 each had schema impact and
 writing code against an unreviewed schema means rewriting it.
+
+---
+
+## Addendum 2026-10-11 (post-approval changes)
+
+1. **Deploy key issued.** ed25519 keypair at `local/deploy_key` (private,
+   gitignored, chmod 600); public half handed to the client for a repo deploy
+   key with write access. GitHub reachable from the sandbox on :22 and :443.
+2. **BLOCKER-1 (selling rates) downgraded again** → provisional seeds exist
+   (`discovery/SEED_RATES.md`, ADR-026); remaining work is the client's guided
+   review of the flagged rows, not a hard dependency.
+3. **BLOCKER-3 (FSSAI naming): client will rename later.** Names stay as-is for
+   now by client decision; ADR-020 already guarantees names are DB-editable
+   content, so the rename is a content edit, not a code change. Launch risk
+   accepted by the client; still advise an FSSAI/CA opinion before paid traffic.
+4. **Forest accent approved** (ADR-025) — one darker colour, careful-use rules.
+5. **Stack locked:** Bundle A (ADR-023) + Drizzle (ADR-024); runtime pinned.
