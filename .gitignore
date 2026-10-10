@@ -32,3 +32,9 @@ npm-debug.log*
 
 # --- discovery scratch (sheet + extracted data are committed deliberately) ---
 discovery/*.tmp
+uploads/
+.npm/
+.cache/
+.local/
+*.log
+.DS_Store
