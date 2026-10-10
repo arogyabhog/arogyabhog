@@ -1,17 +1,17 @@
-import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
+import { describe, expect, it } from 'vitest';
 import {
   calculateMix,
-  scaleRatiosToWeight,
-  largestRemainder,
-  roundHalfUp,
   ceilDiv,
-  MixError,
   EngineBugError,
   formatRupees,
   type Ingredient,
-  type StoreConfig,
+  largestRemainder,
+  MixError,
   type MixRequest,
+  roundHalfUp,
+  type StoreConfig,
+  scaleRatiosToWeight,
 } from './mix-engine';
 
 /* ================================================================== *
@@ -26,14 +26,78 @@ import {
  * computed raw total can be compared directly against the sheet's ₹466.50.
  */
 const EVERYDAY_ATTA: Ingredient[] = [
-  { id: 'RM-001', name: 'Whole Wheat (Sharbati Gehu)', isBaseGrain: true,  maxPctBps: null, sellPaisePerKg: 3500,  costPaisePerKg: 3500,  nutrients: { enerc: 34000, protcnt: 1200, fibtg: 1150 } },
-  { id: 'RM-004', name: 'Standard Desi Kala Chana',    isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 8000,  costPaisePerKg: 8000,  nutrients: { enerc: 36000, protcnt: 2000, fibtg: 1700 } },
-  { id: 'RM-002', name: 'Normal Jau',                  isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 5000,  costPaisePerKg: 5000,  nutrients: { enerc: 35400, protcnt: 1200, fibtg: 1700 } },
-  { id: 'RM-006', name: 'Soybean',                     isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 12000, costPaisePerKg: 12000, nutrients: { enerc: 44600, protcnt: 3600, fibtg: 900 } },
-  { id: 'RM-007', name: 'Jundhi (Jowar)',              isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 10000, costPaisePerKg: 10000, nutrients: { enerc: 34900, protcnt: 1040, fibtg: 1000 } },
-  { id: 'RM-008', name: 'Ragi',                        isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 7000,  costPaisePerKg: 7000,  nutrients: { enerc: 32800, protcnt: 730,  fibtg: 1150 } },
-  { id: 'RM-009', name: 'Bajra',                       isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 4000,  costPaisePerKg: 4000,  nutrients: { enerc: 36100, protcnt: 1160, fibtg: 1130 } },
-  { id: 'RM-010', name: 'Flaxseed (Alsi)',             isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 15000, costPaisePerKg: 15000, nutrients: { enerc: 53400, protcnt: 1800, fibtg: 2700 } },
+  {
+    id: 'RM-001',
+    name: 'Whole Wheat (Sharbati Gehu)',
+    isBaseGrain: true,
+    maxPctBps: null,
+    sellPaisePerKg: 3500,
+    costPaisePerKg: 3500,
+    nutrients: { enerc: 34000, protcnt: 1200, fibtg: 1150 },
+  },
+  {
+    id: 'RM-004',
+    name: 'Standard Desi Kala Chana',
+    isBaseGrain: false,
+    maxPctBps: null,
+    sellPaisePerKg: 8000,
+    costPaisePerKg: 8000,
+    nutrients: { enerc: 36000, protcnt: 2000, fibtg: 1700 },
+  },
+  {
+    id: 'RM-002',
+    name: 'Normal Jau',
+    isBaseGrain: false,
+    maxPctBps: null,
+    sellPaisePerKg: 5000,
+    costPaisePerKg: 5000,
+    nutrients: { enerc: 35400, protcnt: 1200, fibtg: 1700 },
+  },
+  {
+    id: 'RM-006',
+    name: 'Soybean',
+    isBaseGrain: false,
+    maxPctBps: null,
+    sellPaisePerKg: 12000,
+    costPaisePerKg: 12000,
+    nutrients: { enerc: 44600, protcnt: 3600, fibtg: 900 },
+  },
+  {
+    id: 'RM-007',
+    name: 'Jundhi (Jowar)',
+    isBaseGrain: false,
+    maxPctBps: null,
+    sellPaisePerKg: 10000,
+    costPaisePerKg: 10000,
+    nutrients: { enerc: 34900, protcnt: 1040, fibtg: 1000 },
+  },
+  {
+    id: 'RM-008',
+    name: 'Ragi',
+    isBaseGrain: false,
+    maxPctBps: null,
+    sellPaisePerKg: 7000,
+    costPaisePerKg: 7000,
+    nutrients: { enerc: 32800, protcnt: 730, fibtg: 1150 },
+  },
+  {
+    id: 'RM-009',
+    name: 'Bajra',
+    isBaseGrain: false,
+    maxPctBps: null,
+    sellPaisePerKg: 4000,
+    costPaisePerKg: 4000,
+    nutrients: { enerc: 36100, protcnt: 1160, fibtg: 1130 },
+  },
+  {
+    id: 'RM-010',
+    name: 'Flaxseed (Alsi)',
+    isBaseGrain: false,
+    maxPctBps: null,
+    sellPaisePerKg: 15000,
+    costPaisePerKg: 15000,
+    nutrients: { enerc: 53400, protcnt: 1800, fibtg: 2700 },
+  },
 ];
 
 const EVERYDAY_WEIGHTS_10KG = [7500, 800, 500, 400, 300, 200, 200, 100];
@@ -87,7 +151,7 @@ describe('golden regression: Everyday Atta vs the client spreadsheet', () => {
     expect(formatRupees(result.pricing.rawPaise)).toBe('₹466.50');
   });
 
-  it('applies milling ₹4/kg and packaging ₹5 FLAT (ADR-010, not the sheet\'s ₹5 x kg)', () => {
+  it("applies milling ₹4/kg and packaging ₹5 FLAT (ADR-010, not the sheet's ₹5 x kg)", () => {
     expect(result.pricing.millingPaise).toBe(4000); // 10 kg x ₹4
     expect(result.pricing.packagingPaise).toBe(500); // ₹5 flat, NOT ₹50
     expect(result.pricing.subtotalPaise).toBe(51150); // ₹511.50 — the corrected true cost
@@ -127,18 +191,108 @@ describe('the Vitality Rule: missing data must hard-fail, never compute as zero'
    * This engine must make that outcome unreachable.
    */
   const VITALITY_RECIPE = [
-    { id: 'RM-001', name: 'Whole Wheat (Sharbati Gehu)', isBaseGrain: true,  maxPctBps: null, sellPaisePerKg: 3500,  costPaisePerKg: 3500,  nutrients: { enerc: 34000, protcnt: 1200 } , w: 5000 },
-    { id: 'RM-005', name: 'Premium Desi Kala Chana',     isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 10000, costPaisePerKg: 10000, nutrients: { enerc: 36000, protcnt: 2100 } , w: 1500 },
-    { id: 'RM-003', name: 'Premium Jau',                 isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 7000,  costPaisePerKg: 7000,  nutrients: { enerc: 35400, protcnt: 1250 } , w: 1000 },
-    { id: 'RM-008', name: 'Ragi',                        isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 7000,  costPaisePerKg: 7000,  nutrients: { enerc: 32800, protcnt: 730 }  , w: 1000 },
-    { id: 'RM-016', name: 'Pumpkin Seeds (Kaddu Beej)',  isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 85000, costPaisePerKg: 85000, nutrients: { enerc: 55900, protcnt: 3020 } , w: 500 },
+    {
+      id: 'RM-001',
+      name: 'Whole Wheat (Sharbati Gehu)',
+      isBaseGrain: true,
+      maxPctBps: null,
+      sellPaisePerKg: 3500,
+      costPaisePerKg: 3500,
+      nutrients: { enerc: 34000, protcnt: 1200 },
+      w: 5000,
+    },
+    {
+      id: 'RM-005',
+      name: 'Premium Desi Kala Chana',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 10000,
+      costPaisePerKg: 10000,
+      nutrients: { enerc: 36000, protcnt: 2100 },
+      w: 1500,
+    },
+    {
+      id: 'RM-003',
+      name: 'Premium Jau',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 7000,
+      costPaisePerKg: 7000,
+      nutrients: { enerc: 35400, protcnt: 1250 },
+      w: 1000,
+    },
+    {
+      id: 'RM-008',
+      name: 'Ragi',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 7000,
+      costPaisePerKg: 7000,
+      nutrients: { enerc: 32800, protcnt: 730 },
+      w: 1000,
+    },
+    {
+      id: 'RM-016',
+      name: 'Pumpkin Seeds (Kaddu Beej)',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 85000,
+      costPaisePerKg: 85000,
+      nutrients: { enerc: 55900, protcnt: 3020 },
+      w: 500,
+    },
     // 🔴 White Sesame: priced, but ABSENT from the sheet's Nutrient Reference
-    { id: 'RM-015', name: 'White Sesame Seeds (Til)',    isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 25000, costPaisePerKg: 25000, nutrients: { enerc: undefined as unknown as number } , w: 300 },
-    { id: 'RM-010', name: 'Flaxseed (Alsi)',             isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 15000, costPaisePerKg: 15000, nutrients: { enerc: 53400, protcnt: 1800 } , w: 300 },
-    { id: 'RM-017', name: 'Sunflower Seeds',             isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 50000, costPaisePerKg: 50000, nutrients: { enerc: 58400, protcnt: 2080 } , w: 200 },
+    {
+      id: 'RM-015',
+      name: 'White Sesame Seeds (Til)',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 25000,
+      costPaisePerKg: 25000,
+      nutrients: { enerc: undefined as unknown as number },
+      w: 300,
+    },
+    {
+      id: 'RM-010',
+      name: 'Flaxseed (Alsi)',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 15000,
+      costPaisePerKg: 15000,
+      nutrients: { enerc: 53400, protcnt: 1800 },
+      w: 300,
+    },
+    {
+      id: 'RM-017',
+      name: 'Sunflower Seeds',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 50000,
+      costPaisePerKg: 50000,
+      nutrients: { enerc: 58400, protcnt: 2080 },
+      w: 200,
+    },
     // 🔴 Methi Seeds: in NO master table. Sheet records rate = ₹0.
-    { id: 'METHI',  name: 'Methi Seeds (Fenugreek)',     isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 0,     costPaisePerKg: 0,     nutrients: { enerc: 23490, protcnt: 2541 } , w: 100 },
-    { id: 'RM-011', name: 'Psyllium Husk (Isabgol)',     isBaseGrain: false, maxPctBps: null, sellPaisePerKg: 15000, costPaisePerKg: 15000, nutrients: { enerc: 18900, protcnt: 0 }    , w: 100 },
+    {
+      id: 'METHI',
+      name: 'Methi Seeds (Fenugreek)',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 0,
+      costPaisePerKg: 0,
+      nutrients: { enerc: 23490, protcnt: 2541 },
+      w: 100,
+    },
+    {
+      id: 'RM-011',
+      name: 'Psyllium Husk (Isabgol)',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 15000,
+      costPaisePerKg: 15000,
+      nutrients: { enerc: 18900, protcnt: 0 },
+      w: 100,
+    },
   ];
 
   const build = () => {
@@ -166,17 +320,13 @@ describe('the Vitality Rule: missing data must hard-fail, never compute as zero'
     } catch (e) {
       expect(e).toBeInstanceOf(MixError);
       expect((e as MixError).code).toBe('INCOMPLETE_INGREDIENT_DATA');
-      expect(['White Sesame Seeds (Til)', 'Methi Seeds (Fenugreek)']).toContain(
-        (e as MixError).details.name,
-      );
+      expect(['White Sesame Seeds (Til)', 'Methi Seeds (Fenugreek)']).toContain((e as MixError).details.name);
     }
   });
 
   it('names a zero selling rate once nutrient data is complete', () => {
     const { ings, req } = build();
-    const fixed = ings.map((i) =>
-      i.id === 'RM-015' ? { ...i, nutrients: { enerc: 51960, protcnt: 2170 } } : i,
-    );
+    const fixed = ings.map((i) => (i.id === 'RM-015' ? { ...i, nutrients: { enerc: 51960, protcnt: 2170 } } : i));
     try {
       calculateMix(req, catalogOf(fixed), ADMIN_STORE, ['enerc', 'protcnt']);
       throw new Error('expected MixError');
@@ -191,9 +341,7 @@ describe('the Vitality Rule: missing data must hard-fail, never compute as zero'
 
   it('names the exact missing nutrients once rates are complete', () => {
     const { ings, req } = build();
-    const fixed = ings.map((i) =>
-      i.id === 'METHI' ? { ...i, sellPaisePerKg: 20000, costPaisePerKg: 15000 } : i,
-    );
+    const fixed = ings.map((i) => (i.id === 'METHI' ? { ...i, sellPaisePerKg: 20000, costPaisePerKg: 15000 } : i));
     try {
       calculateMix(req, catalogOf(fixed), ADMIN_STORE, ['enerc', 'protcnt']);
       throw new Error('expected MixError');
@@ -223,12 +371,18 @@ describe('the Vitality Rule: missing data must hard-fail, never compute as zero'
     // must be accepted; only `undefined` is a data gap. Conflating them is what
     // broke the spreadsheet.
     const psyllium: Ingredient = {
-      id: 'RM-011', name: 'Psyllium Husk (Isabgol)', isBaseGrain: false, maxPctBps: null,
-      sellPaisePerKg: 15000, costPaisePerKg: 15000, nutrients: { enerc: 18900, protcnt: 0 },
+      id: 'RM-011',
+      name: 'Psyllium Husk (Isabgol)',
+      isBaseGrain: false,
+      maxPctBps: null,
+      sellPaisePerKg: 15000,
+      costPaisePerKg: 15000,
+      nutrients: { enerc: 18900, protcnt: 0 },
     };
     const wheat: Ingredient = { ...EVERYDAY_ATTA[0]! };
     const req: MixRequest = {
-      targetWeightG: 5000, packageCount: 1,
+      targetWeightG: 5000,
+      packageCount: 1,
       items: [
         { ingredientId: wheat.id, weightG: 4000 },
         { ingredientId: psyllium.id, weightG: 1000 },
@@ -424,9 +578,7 @@ describe('property: pricing integrity', () => {
         const bumped = m.ingredients.map((ing, i) =>
           i === idx ? { ...ing, sellPaisePerKg: ing.sellPaisePerKg + bump } : ing,
         );
-        const after = runMix(
-          { ...m, ingredients: bumped },
-        ).pricing.rawPaise;
+        const after = runMix({ ...m, ingredients: bumped }).pricing.rawPaise;
         expect(after).toBeGreaterThanOrEqual(before);
       }),
       { numRuns: 400 },
@@ -473,27 +625,33 @@ describe('property: nutrition maths', () => {
 
   it('a single-value blend returns exactly that nutrient value (no drift)', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 0, max: 100000 }),
-        fc.integer({ min: 0, max: 10000 }),
-        (enerc, protcnt) => {
-          const ing: Ingredient = {
-            id: 'X', name: 'X', isBaseGrain: true, maxPctBps: null,
-            sellPaisePerKg: 5000, costPaisePerKg: 4000,
-            nutrients: { enerc, protcnt, fibtg: 0, ca: 0 },
-          };
-          const ing2: Ingredient = { ...ing, id: 'Y', name: 'Y' };
-          const r = calculateMix(
-            { targetWeightG: 10000, packageCount: 1, items: [
-              { ingredientId: 'X', weightG: 6000 }, { ingredientId: 'Y', weightG: 4000 } ] },
-            catalogOf([ing, ing2]),
-            { ...STORE, minBaseGrainBps: 0 },
-            ['enerc', 'protcnt'],
-          );
-          expect(r.nutrition.per100g.find((n) => n.code === 'enerc')!.valueScaled).toBe(enerc);
-          expect(r.nutrition.per100g.find((n) => n.code === 'protcnt')!.valueScaled).toBe(protcnt);
-        },
-      ),
+      fc.property(fc.integer({ min: 0, max: 100000 }), fc.integer({ min: 0, max: 10000 }), (enerc, protcnt) => {
+        const ing: Ingredient = {
+          id: 'X',
+          name: 'X',
+          isBaseGrain: true,
+          maxPctBps: null,
+          sellPaisePerKg: 5000,
+          costPaisePerKg: 4000,
+          nutrients: { enerc, protcnt, fibtg: 0, ca: 0 },
+        };
+        const ing2: Ingredient = { ...ing, id: 'Y', name: 'Y' };
+        const r = calculateMix(
+          {
+            targetWeightG: 10000,
+            packageCount: 1,
+            items: [
+              { ingredientId: 'X', weightG: 6000 },
+              { ingredientId: 'Y', weightG: 4000 },
+            ],
+          },
+          catalogOf([ing, ing2]),
+          { ...STORE, minBaseGrainBps: 0 },
+          ['enerc', 'protcnt'],
+        );
+        expect(r.nutrition.per100g.find((n) => n.code === 'enerc')!.valueScaled).toBe(enerc);
+        expect(r.nutrition.per100g.find((n) => n.code === 'protcnt')!.valueScaled).toBe(protcnt);
+      }),
       { numRuns: 300 },
     );
   });
@@ -602,14 +760,87 @@ describe('adversarial: malformed and hostile input', () => {
 
   it.each([
     ['empty items', { targetWeightG: 10000, packageCount: 1, items: [] }],
-    ['single item (below MIN_ITEMS)', { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: 10000 }] }],
-    ['zero weight', { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: 0 }, { ingredientId: 'RM-004', weightG: 10000 }] }],
-    ['negative weight', { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: -500 }, { ingredientId: 'RM-004', weightG: 10500 }] }],
-    ['fractional weight', { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: 100.5 }, { ingredientId: 'RM-004', weightG: 9899.5 }] }],
-    ['NaN weight', { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: NaN }, { ingredientId: 'RM-004', weightG: 10000 }] }],
-    ['zero packageCount', { targetWeightG: 10000, packageCount: 0, items: [{ ingredientId: 'RM-001', weightG: 6000 }, { ingredientId: 'RM-004', weightG: 4000 }] }],
-    ['duplicate ingredient', { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: 5000 }, { ingredientId: 'RM-001', weightG: 5000 }] }],
-    ['unknown ingredient', { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: 5000 }, { ingredientId: 'HACKED', weightG: 5000 }] }],
+    [
+      'single item (below MIN_ITEMS)',
+      { targetWeightG: 10000, packageCount: 1, items: [{ ingredientId: 'RM-001', weightG: 10000 }] },
+    ],
+    [
+      'zero weight',
+      {
+        targetWeightG: 10000,
+        packageCount: 1,
+        items: [
+          { ingredientId: 'RM-001', weightG: 0 },
+          { ingredientId: 'RM-004', weightG: 10000 },
+        ],
+      },
+    ],
+    [
+      'negative weight',
+      {
+        targetWeightG: 10000,
+        packageCount: 1,
+        items: [
+          { ingredientId: 'RM-001', weightG: -500 },
+          { ingredientId: 'RM-004', weightG: 10500 },
+        ],
+      },
+    ],
+    [
+      'fractional weight',
+      {
+        targetWeightG: 10000,
+        packageCount: 1,
+        items: [
+          { ingredientId: 'RM-001', weightG: 100.5 },
+          { ingredientId: 'RM-004', weightG: 9899.5 },
+        ],
+      },
+    ],
+    [
+      'NaN weight',
+      {
+        targetWeightG: 10000,
+        packageCount: 1,
+        items: [
+          { ingredientId: 'RM-001', weightG: NaN },
+          { ingredientId: 'RM-004', weightG: 10000 },
+        ],
+      },
+    ],
+    [
+      'zero packageCount',
+      {
+        targetWeightG: 10000,
+        packageCount: 0,
+        items: [
+          { ingredientId: 'RM-001', weightG: 6000 },
+          { ingredientId: 'RM-004', weightG: 4000 },
+        ],
+      },
+    ],
+    [
+      'duplicate ingredient',
+      {
+        targetWeightG: 10000,
+        packageCount: 1,
+        items: [
+          { ingredientId: 'RM-001', weightG: 5000 },
+          { ingredientId: 'RM-001', weightG: 5000 },
+        ],
+      },
+    ],
+    [
+      'unknown ingredient',
+      {
+        targetWeightG: 10000,
+        packageCount: 1,
+        items: [
+          { ingredientId: 'RM-001', weightG: 5000 },
+          { ingredientId: 'HACKED', weightG: 5000 },
+        ],
+      },
+    ],
   ])('rejects %s', (_label, req) => {
     expect(() => calculateMix(req as MixRequest, catalogOf(ing), STORE, NUTRIENT_CODES)).toThrowError(MixError);
   });
@@ -618,9 +849,17 @@ describe('adversarial: malformed and hostile input', () => {
     for (const evil of ['__proto__', 'constructor', 'prototype', 'toString']) {
       expect(() =>
         calculateMix(
-          { targetWeightG: 10000, packageCount: 1, items: [
-            { ingredientId: evil, weightG: 6000 }, { ingredientId: 'RM-004', weightG: 4000 } ] },
-          catalogOf(ing), STORE, NUTRIENT_CODES,
+          {
+            targetWeightG: 10000,
+            packageCount: 1,
+            items: [
+              { ingredientId: evil, weightG: 6000 },
+              { ingredientId: 'RM-004', weightG: 4000 },
+            ],
+          },
+          catalogOf(ing),
+          STORE,
+          NUTRIENT_CODES,
         ),
       ).toThrowError(MixError);
     }
@@ -772,27 +1011,24 @@ describe('scaleRatiosToWeight', () => {
 
   it('is idempotent whenever it succeeds: re-scaling its own output yields the same grams', () => {
     fc.assert(
-      fc.property(
-        fc.array(fc.integer({ min: 1, max: 10000 }), { minLength: 2, maxLength: 10 }),
-        (ratios) => {
-          const target = 10000;
-          let first;
-          try {
-            first = scaleRatiosToWeight(
-              ratios.map((r, i) => ({ ingredientId: `I-${i}`, ratio: r })),
-              target,
-            );
-          } catch {
-            fc.pre(false); // legitimately un-millable input: not a counterexample
-            return;
-          }
-          const second = scaleRatiosToWeight(
-            first.map((f) => ({ ingredientId: f.ingredientId, ratio: f.weightG })),
+      fc.property(fc.array(fc.integer({ min: 1, max: 10000 }), { minLength: 2, maxLength: 10 }), (ratios) => {
+        const target = 10000;
+        let first: ReturnType<typeof scaleRatiosToWeight>;
+        try {
+          first = scaleRatiosToWeight(
+            ratios.map((r, i) => ({ ingredientId: `I-${i}`, ratio: r })),
             target,
           );
-          expect(second).toStrictEqual(first);
-        },
-      ),
+        } catch {
+          fc.pre(false); // legitimately un-millable input: not a counterexample
+          return;
+        }
+        const second = scaleRatiosToWeight(
+          first.map((f) => ({ ingredientId: f.ingredientId, ratio: f.weightG })),
+          target,
+        );
+        expect(second).toStrictEqual(first);
+      }),
       { numRuns: 500 },
     );
   });
@@ -800,13 +1036,31 @@ describe('scaleRatiosToWeight', () => {
   it('rejects duplicates, non-integers and empty input', () => {
     expect(() => scaleRatiosToWeight([], 10000)).toThrowError(MixError);
     expect(() =>
-      scaleRatiosToWeight([{ ingredientId: 'A', ratio: 1 }, { ingredientId: 'A', ratio: 1 }], 10000),
+      scaleRatiosToWeight(
+        [
+          { ingredientId: 'A', ratio: 1 },
+          { ingredientId: 'A', ratio: 1 },
+        ],
+        10000,
+      ),
     ).toThrowError(MixError);
     expect(() =>
-      scaleRatiosToWeight([{ ingredientId: 'A', ratio: 1.5 }, { ingredientId: 'B', ratio: 1 }], 10000),
+      scaleRatiosToWeight(
+        [
+          { ingredientId: 'A', ratio: 1.5 },
+          { ingredientId: 'B', ratio: 1 },
+        ],
+        10000,
+      ),
     ).toThrowError(MixError);
     expect(() =>
-      scaleRatiosToWeight([{ ingredientId: 'A', ratio: 1 }, { ingredientId: 'B', ratio: 1 }], 0),
+      scaleRatiosToWeight(
+        [
+          { ingredientId: 'A', ratio: 1 },
+          { ingredientId: 'B', ratio: 1 },
+        ],
+        0,
+      ),
     ).toThrowError(MixError);
   });
 

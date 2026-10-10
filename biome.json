@@ -1,0 +1,55 @@
+{
+  "files": {
+    "includes": [
+      "**",
+      "!**/*.css",
+      "!migrations",
+      "!discovery",
+      "!package-lock.json",
+      "!.next",
+      "!public",
+      "!.config",
+      "!brand-board.html"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": { "quoteStyle": "single", "semicolons": "always" }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "performance": {
+        "noImgElement": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/domain/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": { "noNonNullAssertion": "off" }
+        }
+      }
+    }
+  ],
+  "assist": {
+    "actions": { "source": { "organizeImports": "on" } }
+  }
+}

@@ -25,8 +25,12 @@ export const stores = sqliteTable('stores', {
   gstRateBps: integer('gst_rate_bps').notNull().default(500),
   referralCreditCap: integer('referral_credit_cap').notNull().default(10),
   refereeBonusCredits: integer('referee_bonus_credits').notNull().default(1),
-  createdAt: integer('created_at').notNull().$defaultFn(() => Date.now()),
-  updatedAt: integer('updated_at').notNull().$defaultFn(() => Date.now()),
+  createdAt: integer('created_at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
+  updatedAt: integer('updated_at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
 });
 
 export const users = sqliteTable('users', {
@@ -41,14 +45,18 @@ export const users = sqliteTable('users', {
   /** Stable code of the referrer; self-referral blocked in service layer (ADR-017). */
   referredByCode: text('referred_by_code'),
   freeDeliveryCredits: integer('free_delivery_credits').notNull().default(1),
-  createdAt: integer('created_at').notNull().$defaultFn(() => Date.now()),
+  createdAt: integer('created_at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
 });
 
 export const ingredients = sqliteTable(
   'ingredients',
   {
     id: text('id').primaryKey(), // RM-001 …
-    storeId: text('store_id').notNull().references(() => stores.id),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => stores.id),
     name: text('name').notNull(),
     category: text('category'),
     isBaseGrain: integer('is_base_grain', { mode: 'boolean' }).notNull().default(false),
@@ -62,7 +70,9 @@ export const ingredients = sqliteTable(
     ratesProvisional: integer('rates_provisional', { mode: 'boolean' }).notNull().default(true),
     reviewNote: text('review_note'),
     active: integer('active', { mode: 'boolean' }).notNull().default(true),
-    updatedAt: integer('updated_at').notNull().$defaultFn(() => Date.now()),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
   },
   (t) => [
     // R1.3 at the storage layer: a zero or negative rate must be impossible to
@@ -91,13 +101,19 @@ export const ingredientNutrition = sqliteTable(
 /** Product names are content, never enums (ADR-020): the client renames freely. */
 export const products = sqliteTable('products', {
   id: text('id').primaryKey(),
-  storeId: text('store_id').notNull().references(() => stores.id),
+  storeId: text('store_id')
+    .notNull()
+    .references(() => stores.id),
   name: text('name').notNull(),
   slug: text('slug').notNull(),
   description: text('description'),
   status: text('status').notNull().default('active'),
-  createdAt: integer('created_at').notNull().$defaultFn(() => Date.now()),
-  updatedAt: integer('updated_at').notNull().$defaultFn(() => Date.now()),
+  createdAt: integer('created_at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
+  updatedAt: integer('updated_at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
 });
 
 export const productVariants = sqliteTable(
@@ -143,7 +159,9 @@ export const auditLog = sqliteTable('audit_log', {
   entityId: text('entity_id').notNull(),
   beforeJson: text('before_json'),
   afterJson: text('after_json'),
-  at: integer('at').notNull().$defaultFn(() => Date.now()),
+  at: integer('at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
 });
 
 export type StoreRow = typeof stores.$inferSelect;

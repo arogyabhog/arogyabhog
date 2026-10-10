@@ -37,7 +37,7 @@ export const ENGINE_VERSION = '1.0.0';
 function floorDiv(a: bigint, b: bigint): bigint {
   if (b === 0n) throw new EngineBugError('floorDiv: division by zero');
   const q = a / b;
-  return a % b !== 0n && (a < 0n) !== (b < 0n) ? q - 1n : q;
+  return a % b !== 0n && a < 0n !== b < 0n ? q - 1n : q;
 }
 
 /** Round half up (toward +∞ on the .5 boundary). Exact, no floating point. */
@@ -129,7 +129,7 @@ export function largestRemainderAtLeastOne(values: readonly bigint[], total: big
   }
   let lifted = 0;
   for (;;) {
-    const zeroIdx = out.findIndex((v) => v === 0n);
+    const zeroIdx = out.indexOf(0n);
     if (zeroIdx === -1) break;
     let donor = -1;
     let best = 1n; // donor must hold > 1 so it stays ≥ 1 after giving
@@ -387,10 +387,7 @@ export function calculateMix(
   assertSum(ratioBps, BPS_TOTAL, 'percentage closure (R1.2)');
 
   /* ---- 5. Base-grain floor (ADR-013) ---- */
-  const baseGrainBps = resolved.reduce(
-    (a, r, i) => (r.ing.isBaseGrain ? a + ratioBps[i]! : a),
-    0n,
-  );
+  const baseGrainBps = resolved.reduce((a, r, i) => (r.ing.isBaseGrain ? a + ratioBps[i]! : a), 0n);
   if (baseGrainBps < BigInt(store.minBaseGrainBps)) {
     throw new MixError(
       'BASE_GRAIN_BELOW_MINIMUM',
@@ -463,16 +460,10 @@ export function calculateMix(
   const allocatedLines = largestRemainder(exactLinePaise, rawPaise);
   assertSum(allocatedLines, rawPaise, 'line prices sum to raw total');
 
-  const exactCost = resolved.reduce(
-    (a, r) => a + r.weightG * BigInt(r.ing.costPaisePerKg),
-    0n,
-  );
+  const exactCost = resolved.reduce((a, r) => a + r.weightG * BigInt(r.ing.costPaisePerKg), 0n);
   const internalCostRaw = roundHalfUp(exactCost, GRAMS_PER_KG);
 
-  const millingPaise = roundHalfUp(
-    targetG * BigInt(store.millingFeePaisePerKg),
-    GRAMS_PER_KG,
-  );
+  const millingPaise = roundHalfUp(targetG * BigInt(store.millingFeePaisePerKg), GRAMS_PER_KG);
   const packagingPaise = BigInt(req.packageCount) * BigInt(store.packagingFeePaise);
   const subtotalPaise = rawPaise + millingPaise + packagingPaise;
 
@@ -484,13 +475,9 @@ export function calculateMix(
 
   // Internal cost also carries milling + packaging; margin is on the GST-inclusive price.
   const internalCostPaise =
-    internalCostRaw +
-    roundHalfUp(targetG * BigInt(store.millingFeePaisePerKg), GRAMS_PER_KG) +
-    packagingPaise;
+    internalCostRaw + roundHalfUp(targetG * BigInt(store.millingFeePaisePerKg), GRAMS_PER_KG) + packagingPaise;
   const marginBps =
-    subtotalPaise === 0n
-      ? 0n
-      : roundHalfUp((subtotalPaise - internalCostPaise) * BPS_TOTAL, subtotalPaise);
+    subtotalPaise === 0n ? 0n : roundHalfUp((subtotalPaise - internalCostPaise) * BPS_TOTAL, subtotalPaise);
 
   const composition: CompositionLine[] = resolved.map((r, i) => ({
     ingredientId: r.ing.id,
@@ -654,15 +641,27 @@ function assertRequest(req: MixRequest): void {
 function assertStoreConfig(store: StoreConfig): void {
   const checks: Array<[string, boolean]> = [
     ['allowedPackSizesG must be non-empty', store.allowedPackSizesG.length > 0],
+    ['allowedPackSizesG must be positive integers', store.allowedPackSizesG.every((s) => Number.isInteger(s) && s > 0)],
     [
-      'allowedPackSizesG must be positive integers',
-      store.allowedPackSizesG.every((s) => Number.isInteger(s) && s > 0),
+      'millingFeePaisePerKg must be a non-negative integer',
+      Number.isInteger(store.millingFeePaisePerKg) && store.millingFeePaisePerKg >= 0,
     ],
-    ['millingFeePaisePerKg must be a non-negative integer', Number.isInteger(store.millingFeePaisePerKg) && store.millingFeePaisePerKg >= 0],
-    ['packagingFeePaise must be a non-negative integer', Number.isInteger(store.packagingFeePaise) && store.packagingFeePaise >= 0],
-    ['deliveryFeePaise must be a non-negative integer', Number.isInteger(store.deliveryFeePaise) && store.deliveryFeePaise >= 0],
-    ['gstRateBps must be an integer in [0, 10000]', Number.isInteger(store.gstRateBps) && store.gstRateBps >= 0 && store.gstRateBps <= 10000],
-    ['minBaseGrainBps must be an integer in [0, 10000]', Number.isInteger(store.minBaseGrainBps) && store.minBaseGrainBps >= 0 && store.minBaseGrainBps <= 10000],
+    [
+      'packagingFeePaise must be a non-negative integer',
+      Number.isInteger(store.packagingFeePaise) && store.packagingFeePaise >= 0,
+    ],
+    [
+      'deliveryFeePaise must be a non-negative integer',
+      Number.isInteger(store.deliveryFeePaise) && store.deliveryFeePaise >= 0,
+    ],
+    [
+      'gstRateBps must be an integer in [0, 10000]',
+      Number.isInteger(store.gstRateBps) && store.gstRateBps >= 0 && store.gstRateBps <= 10000,
+    ],
+    [
+      'minBaseGrainBps must be an integer in [0, 10000]',
+      Number.isInteger(store.minBaseGrainBps) && store.minBaseGrainBps >= 0 && store.minBaseGrainBps <= 10000,
+    ],
   ];
   for (const [msg, ok] of checks) {
     if (!ok) throw new MixError('INVALID_CONFIG', msg);
@@ -679,18 +678,20 @@ function assertStoreConfig(store: StoreConfig): void {
  */
 function assertIngredientComplete(ing: Ingredient, nutrientCodes: readonly string[]): void {
   if (!Number.isInteger(ing.sellPaisePerKg) || ing.sellPaisePerKg <= 0) {
-    throw new MixError(
-      'INCOMPLETE_INGREDIENT_DATA',
-      `Ingredient "${ing.name}" has no valid selling rate`,
-      { ingredientId: ing.id, name: ing.name, field: 'sellPaisePerKg', value: ing.sellPaisePerKg },
-    );
+    throw new MixError('INCOMPLETE_INGREDIENT_DATA', `Ingredient "${ing.name}" has no valid selling rate`, {
+      ingredientId: ing.id,
+      name: ing.name,
+      field: 'sellPaisePerKg',
+      value: ing.sellPaisePerKg,
+    });
   }
   if (!Number.isInteger(ing.costPaisePerKg) || ing.costPaisePerKg <= 0) {
-    throw new MixError(
-      'INCOMPLETE_INGREDIENT_DATA',
-      `Ingredient "${ing.name}" has no valid cost rate`,
-      { ingredientId: ing.id, name: ing.name, field: 'costPaisePerKg', value: ing.costPaisePerKg },
-    );
+    throw new MixError('INCOMPLETE_INGREDIENT_DATA', `Ingredient "${ing.name}" has no valid cost rate`, {
+      ingredientId: ing.id,
+      name: ing.name,
+      field: 'costPaisePerKg',
+      value: ing.costPaisePerKg,
+    });
   }
   const missing = nutrientCodes.filter((code) => {
     const v = ing.nutrients[code];

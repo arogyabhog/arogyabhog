@@ -4,9 +4,9 @@
  * All domain logic lives in the engine + service (testable without Next).
  */
 import { NextResponse } from 'next/server';
-import { MixError } from '@/domain/mix-engine';
 import { db } from '@/db/client';
-import { NUTRITION_NOTICE, mixCalculateRequestSchema, type ErrorEnvelope } from '@/server/contracts';
+import { MixError } from '@/domain/mix-engine';
+import { type ErrorEnvelope, mixCalculateRequestSchema, NUTRITION_NOTICE } from '@/server/contracts';
 import { calculateMixFromDb } from '@/server/mix-service';
 
 export async function POST(request: Request): Promise<NextResponse> {

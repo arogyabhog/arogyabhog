@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/* Design tokens — .project-os/07_DESIGN_SYSTEM.md (ADR-022 + ADR-025).
+   Every value pixel-sampled from the client logo; contrasts measured. */
+@theme {
+  --color-ivory-50: #FCFAF5;
+  --color-ivory-100: #F7F2E8;
+  --color-ivory-200: #EFE7D8;
+  --color-ivory-300: #E3D7C0;
+  --color-ivory-400: #D3C3A4;
+
+  --color-gold-50: #FDF9EE;
+  --color-gold-100: #FAF1DA;
+  --color-gold-200: #F3E4BC;
+  --color-gold-300: #E5D3AB;
+  --color-gold-400: #CDB47E;
+  --color-gold-500: #B28D60;
+  --color-gold-600: #90724E;
+  --color-gold-700: #6C4E30;
+  --color-gold-800: #553C24;
+  --color-gold-900: #402917;
+
+  --color-ink-300: #A99A85;
+  --color-ink-400: #8A7963;
+  --color-ink-500: #6C5A48;
+  --color-ink-700: #3A352C;
+  --color-ink-800: #242422;
+  --color-ink-900: #1B1811;
+
+  --color-forest-50: #F1F6F1;
+  --color-forest-100: #E4EDE5;
+  --color-forest-600: #3F6B4F;
+  --color-forest-700: #2F523C;
+  --color-forest-800: #24402F;
+  --color-forest-900: #1B2E24;
+  --color-forest-950: #12201A;
+
+  --color-leaf: #4A6B4F;
+  --color-leaf-soft: #E7EFE6;
+  --color-warn: #8A5A18;
+  --color-warn-soft: #F6EDDD;
+  --color-danger: #8C3A2E;
+  --color-danger-soft: #F6E7E4;
+
+  --font-display: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-hindi: var(--font-noto), system-ui, sans-serif;
+
+  --radius-ctrl: 8px;
+  --radius-card: 12px;
+  --shadow-warm: 0 1px 2px rgba(64, 41, 23, 0.05), 0 10px 28px rgba(64, 41, 23, 0.07);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  @apply bg-ivory-50 text-ink-700 font-sans antialiased;
+}
+::selection {
+  background: var(--color-gold-200);
+  color: var(--color-ink-900);
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-gold-500), transparent);
+}

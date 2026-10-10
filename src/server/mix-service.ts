@@ -5,15 +5,15 @@
  */
 import { and, eq, inArray } from 'drizzle-orm';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
+import { ingredientNutrition, ingredients, stores } from '../db/schema';
 import {
-  MixError,
   calculateMix,
   type Ingredient,
+  MixError,
   type MixResult,
   type NutrientSource,
   type StoreConfig,
 } from '../domain/mix-engine';
-import { ingredientNutrition, ingredients, stores } from '../db/schema';
 import { DISPLAY_NUTRIENTS, type MixCalculateRequest } from './contracts';
 
 export interface MixCalculation {
@@ -76,7 +76,9 @@ export async function calculateMixFromDb<S extends Record<string, unknown> = Rec
     const bag = nutrientsByIng.get(n.ingredientId) ?? {};
     bag[n.nutrientKey] = n.valueX100;
     nutrientsByIng.set(n.ingredientId, bag);
-    (sourcesByIng[n.ingredientId] ??= {})[n.nutrientKey] = toSource(n.source);
+    const sourceBag = sourcesByIng[n.ingredientId] ?? {};
+    sourceBag[n.nutrientKey] = toSource(n.source);
+    sourcesByIng[n.ingredientId] = sourceBag;
   }
 
   const catalog = new Map<string, Ingredient>(

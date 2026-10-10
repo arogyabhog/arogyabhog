@@ -122,3 +122,5 @@ writing code against an unreviewed schema means rewriting it.
    golden prices at ADR-026 seed sell rates (raw 88550), the sheet-cost golden
    (46650) lives in the domain suite; CGST is floored, odd paisa to SGST.
    History graph tool: `npm run graph` → `.project-os/10_HISTORY_GRAPH.md`.
+
+7. **2026-10-11 — Phase 5 first UI look.** Tailwind v4 on ADR-022/025 tokens (src/app/globals.css); storefront home (src/app/page.tsx) = hero + premade grid with exact-% disclosure + Lab configurator (src/components/LabClient.tsx) wired to POST /api/storefront/mix/calculate with debounced live certificate, snap-to-pack, base-grain meter, friendly error hints, provisional + estimated chips. USDA fallback seeded (chia FDC 170554, buckwheat FDC 170687 w/ kJ→kcal patch); psyllium + pumpkin stay "nutrition pending" (429 quota, mirrors conflict — ADR-007). AI imagery: public/img/hero-grains.png + 5 pack shots. scripts/db-setup.ts builds local/dev.db. Next auto-patched tsconfig (jsx react-jsx, allowJs, .next types); we added DOM libs + src/**/*.tsx to include. Tests 64/64 (new: chia USDA provenance).

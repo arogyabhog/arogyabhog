@@ -1,23 +1,32 @@
 /**
  * Seeder for the vertical slice. Reads the frozen discovery artefacts so the
  * database always starts from the same verified numbers:
- *   - seed-ingredient-rates.json   (ADR-026 provisional rates + provenance)
+ *   - seed-ingredient-rates.json     (ADR-026 provisional rates + provenance)
  *   - ifct2017-mapped-nutrients.json (ADR-007 primary source, values ×100)
- *   - seed-premade-recipes.json    (blend compositions in bps)
+ *   - usda-fallback-nutrients.json   (ADR-007 fallback for IFCT gaps)
+ *   - seed-premade-recipes.json      (blend compositions in bps)
  *
- * The four ingredients with no IFCT profile (psyllium, kuttu, chia, pumpkin)
- * are inserted WITHOUT nutrition rows on purpose: the engine hard-fails
- * (INCOMPLETE_INGREDIENT_DATA) if they enter a mix, which is the honest
- * behaviour until USDA fallback values land (ADR-007).
+ * Ingredients with no profile in EITHER source (psyllium, pumpkin — USDA API
+ * quota pending, mirrors disagree) are inserted WITHOUT nutrition rows on
+ * purpose: the engine hard-fails (INCOMPLETE_INGREDIENT_DATA) if they enter a
+ * mix, and the Lab renders them as "nutrition pending".
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
-import { ingredientNutrition, ingredients, productRecipeLines, productVariants, products, stores, users } from './schema';
+import {
+  ingredientNutrition,
+  ingredients,
+  productRecipeLines,
+  products,
+  productVariants,
+  stores,
+  users,
+} from './schema';
 
 export const SEED_STORE_ID = 'st_knp_01';
 
-/** ingredient id → key in ifct2017-mapped-nutrients.json */
+/** ingredient id → profile key in the IFCT json, else the USDA json */
 const NUTRIENT_PROFILE: Record<string, string> = {
   'RM-001': 'Whole Wheat (Sharbati)',
   'RM-002': 'Barley (Jau)',
@@ -29,20 +38,14 @@ const NUTRIENT_PROFILE: Record<string, string> = {
   'RM-008': 'Ragi',
   'RM-009': 'Bajra',
   'RM-010': 'Linseed (Alsi)',
+  'RM-012': 'Kuttu (Buckwheat)', // USDA fallback
   'RM-013': 'Green gram dal (Moong)',
+  'RM-014': 'Chia Seeds', // USDA fallback
   'RM-015': 'Gingelly/Sesame white (Til)',
   'RM-017': 'Sunflower seeds',
   'RM-018': 'Fenugreek seeds (Methi)',
 };
 
-/** category / base-grain flag / cap per ingredient (Master Prices + ADR-013). */
-/**
- * category / base-grain flag / cap per ingredient (Master Prices + ADR-013).
- * `base` follows the sheet's OWN category label verbatim: only RM-001 is
- * 'Base Grain'. Millets/barley are grains but not the base flour — the domain
- * golden (Everyday = 7500 bps base) encodes the same rule. Admin-editable
- * per store anyway (is_base_grain column).
- */
 const META: Record<string, { category: string; base: boolean; cap: number | null }> = {
   'RM-001': { category: 'Base Grain', base: true, cap: null },
   'RM-002': { category: 'Standard Grain', base: false, cap: null },
@@ -67,10 +70,21 @@ const META: Record<string, { category: string; base: boolean; cap: number | null
 const PREMADE: Record<string, { name: string; slug: string; sell10: number; cost10: number; provisional?: boolean }> = {
   everyday: { name: 'ArogyaBhog Everyday Atta', slug: 'everyday-atta', sell10: 95000, cost10: 55650 },
   sugar_care: { name: 'ArogyaBhog Sugar Care Atta', slug: 'sugar-care-atta', sell10: 125000, cost10: 70600 },
-  high_protein: { name: 'ArogyaBhog High-Protein Fitness Atta', slug: 'high-protein-atta', sell10: 135000, cost10: 73100 },
+  high_protein: {
+    name: 'ArogyaBhog High-Protein Fitness Atta',
+    slug: 'high-protein-atta',
+    sell10: 135000,
+    cost10: 73100,
+  },
   thyro_care: { name: 'ArogyaBhog Thyro-Care Atta', slug: 'thyro-care-atta', sell10: 165000, cost10: 125500 },
   // Dashboard MRP cell is corrupt; midpoint of the sheet's 1100/1400 band (ADR-026).
-  vitality: { name: 'ArogyaBhog Vitality Atta', slug: 'vitality-atta', sell10: 125000, cost10: 97500, provisional: true },
+  vitality: {
+    name: 'ArogyaBhog Vitality Atta',
+    slug: 'vitality-atta',
+    sell10: 125000,
+    cost10: 97500,
+    provisional: true,
+  },
 };
 
 interface RateRow {
@@ -90,10 +104,9 @@ function readJson(rel: string): unknown {
 
 export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
   const rates = readJson('discovery/seed-ingredient-rates.json') as RateRow[];
-  const nutrients = readJson('discovery/ifct2017-mapped-nutrients.json') as Record<
-    string,
-    Record<string, unknown>
-  >;
+  const ifct = readJson('discovery/ifct2017-mapped-nutrients.json') as Record<string, Record<string, unknown>>;
+  const usda = readJson('discovery/usda-fallback-nutrients.json') as Record<string, Record<string, unknown>>;
+  const profiles: Record<string, Record<string, unknown>> = { ...ifct, ...usda };
   const recipes = readJson('discovery/seed-premade-recipes.json') as Record<
     string,
     { lines: Array<{ ingredient_id: string; ratio_bps: number }> }
@@ -141,17 +154,22 @@ export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
     });
 
     const profileKey = NUTRIENT_PROFILE[r.ingredient_id];
-    if (!profileKey) continue; // USDA-pending ingredient: no nutrition rows, on purpose
-    const profile = nutrients[profileKey];
-    if (!profile) throw new Error(`seed: missing IFCT profile ${profileKey}`);
+    if (!profileKey) continue; // no profile in any source: unmixable on purpose
+    const profile = profiles[profileKey];
+    if (!profile) throw new Error(`seed: missing profile ${profileKey}`);
     const rows = Object.entries(profile)
-      .filter(([k, v]) => typeof v === 'number' && k !== 'ifct_code')
+      .filter(([k, v]) => typeof v === 'number' && k !== 'fdc_id')
       .map(([k, v]) => ({
         ingredientId: r.ingredient_id,
         nutrientKey: k,
         valueX100: Math.round((v as number) * 100),
         source: String(profile.source ?? 'IFCT-2017 (ICMR-NIN)'),
-        sourceCode: typeof profile.ifct_code === 'string' ? profile.ifct_code : null,
+        sourceCode:
+          typeof profile.ifct_code === 'string'
+            ? profile.ifct_code
+            : typeof profile.fdc_id === 'number'
+              ? `FDC ${profile.fdc_id}`
+              : null,
       }));
     if (rows.length === 0) throw new Error(`seed: empty nutrition for ${profileKey}`);
     await db.insert(ingredientNutrition).values(rows);
