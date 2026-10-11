@@ -5,20 +5,20 @@ export const dynamic = 'force-dynamic';
 export default async function ShopPage() {
   const { preMades } = await getStorefront();
   return (
-    <main className="mx-auto max-w-6xl px-5 pt-12">
-      <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">Shop</div>
-      <h1 className="mt-2 font-display text-4xl font-semibold text-ink-900">The house blends</h1>
+    <main className="mx-auto max-w-6xl px-4 pt-10 sm:px-5 sm:pt-12">
+      <div className="text-xs font-bold uppercase tracking-[0.14em] text-forest-700">Shop</div>
+      <h1 className="mt-2 font-display text-3xl font-semibold text-ink-900 sm:text-4xl">The house blends</h1>
       <p className="mt-3 max-w-2xl text-[15px] leading-7 text-ink-500">
         Five premade attas, each disclosing its exact composition. Prices are GST-inclusive; delivery (₹50/order) and
         any custom-mix milling charges appear separately at checkout.
       </p>
       <div className="gold-rule mt-4 mb-8" />
-      <div className="grid gap-5 pb-8 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 pb-8 md:grid-cols-2 lg:grid-cols-3">
         {preMades.map((p) => (
           <a
             key={p.slug}
             href={`/shop/${p.slug}`}
-            className="group overflow-hidden rounded-card border border-ivory-300 bg-white shadow-warm"
+            className="group overflow-hidden rounded-card border border-ivory-300 bg-white shadow-warm transition hover:border-forest-600"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

@@ -18,13 +18,13 @@ export default async function Home() {
           alt="Brass bowls of whole grains and fresh-milled flour on ivory linen"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-ivory-50 via-ivory-50/85 to-transparent" />
-        <div className="relative mx-auto max-w-6xl px-5 py-24 sm:py-32">
+        <div className="absolute inset-0 bg-gradient-to-b from-ivory-50 via-ivory-50/90 to-ivory-50/30 sm:bg-gradient-to-r sm:via-ivory-50/85 sm:to-transparent" />
+        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-5 sm:py-24 lg:py-32">
           <div className="max-w-xl">
             <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">
               Kanpur · milled weekly · delivered by our own drivers
             </div>
-            <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.1] tracking-tight text-ink-900 sm:text-6xl">
+            <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.08] tracking-tight text-ink-900 sm:text-5xl lg:text-6xl">
               Flour you can read, line by line.
             </h1>
             <p className="mt-3 font-hindi text-xl text-ink-500">रोटी में स्वाद, स्वास्थ्य के साथ</p>
@@ -32,10 +32,10 @@ export default async function Home() {
               Every blend shows its exact grain percentages, its full price breakdown and its estimated nutrition —
               because transparency is not a campaign, it is the recipe.
             </p>
-            <div className="mt-8 flex gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="/lab"
-                className="rounded-ctrl bg-ink-900 px-6 py-3 text-sm font-bold text-gold-300 shadow-warm hover:bg-ink-800"
+                className="rounded-ctrl bg-forest-800 px-6 py-3 text-sm font-bold text-gold-100 shadow-warm hover:bg-forest-700"
               >
                 Build my atta
               </a>
@@ -51,23 +51,23 @@ export default async function Home() {
       </section>
 
       {/* PROMISE STRIP */}
-      <section id="promise" className="border-y border-ivory-300 bg-ivory-100">
-        <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:grid-cols-3">
+      <section id="promise" className="border-y border-forest-900 bg-forest-950">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-5">
           <div>
-            <div className="text-sm font-extrabold text-ink-900">Our own drivers</div>
-            <p className="mt-1 text-[13px] leading-6 text-ink-500">
+            <div className="text-sm font-extrabold text-gold-200">Our own drivers</div>
+            <p className="mt-1 text-[13px] leading-6 text-forest-100/75">
               No courier roulette. Fresh packs travel in our bags, with people we employ.
             </p>
           </div>
           <div>
-            <div className="text-sm font-extrabold text-ink-900">COD &amp; UPI QR — no middleman</div>
-            <p className="mt-1 text-[13px] leading-6 text-ink-500">
+            <div className="text-sm font-extrabold text-gold-200">COD &amp; UPI QR — no middleman</div>
+            <p className="mt-1 text-[13px] leading-6 text-forest-100/75">
               Pay cash on delivery or scan our QR. Your money reaches us directly, never a gateway.
             </p>
           </div>
           <div>
-            <div className="text-sm font-extrabold text-ink-900">The receipt is the recipe</div>
-            <p className="mt-1 text-[13px] leading-6 text-ink-500">
+            <div className="text-sm font-extrabold text-gold-200">The receipt is the recipe</div>
+            <p className="mt-1 text-[13px] leading-6 text-forest-100/75">
               Exact percentages, every fee on its own line, GST split shown. Estimated nutrition, labelled so.
             </p>
           </div>
@@ -75,11 +75,11 @@ export default async function Home() {
       </section>
 
       {/* FEATURED BLENDS */}
-      <section className="mx-auto max-w-6xl px-5 pt-16">
+      <section className="mx-auto max-w-6xl px-4 pt-14 sm:px-5 sm:pt-16">
         <div className="flex items-end justify-between">
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">The house blends</div>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-ink-900">
+            <h2 className="mt-2 font-display text-2xl font-semibold text-ink-900 sm:text-3xl">
               Premade, and proud of their percentages
             </h2>
           </div>
@@ -130,8 +130,8 @@ export default async function Home() {
       </section>
 
       {/* THE LAB CTA — the one deliberate forest-green moment (ADR-025) */}
-      <section className="mx-auto mt-20 max-w-6xl px-5">
-        <div className="overflow-hidden rounded-card bg-forest-900 px-8 py-12 sm:px-12">
+      <section className="mx-auto mt-16 max-w-6xl px-4 sm:mt-20 sm:px-5">
+        <div className="overflow-hidden rounded-card bg-forest-900 px-6 py-10 sm:px-12 sm:py-12">
           <div className="flex flex-wrap items-center gap-8">
             <div className="min-w-[280px] flex-1">
               <div className="text-xs font-bold uppercase tracking-[0.14em] text-forest-100/70">The Lab</div>

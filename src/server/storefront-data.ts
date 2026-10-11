@@ -3,11 +3,12 @@
  * database through here — no page owns private data logic, so renaming or
  * re-pricing (ADR-020/026) never means touching components.
  */
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { IngProp, PreMadeProp } from '@/components/LabClient';
 import { db } from '@/db/client';
 import { ingredientNutrition, ingredients, productRecipeLines, products, productVariants } from '@/db/schema';
 import { SEED_STORE_ID } from '@/db/seed';
+import { type BlendNutrientRow, blendNutrition } from '@/domain/nutrition-blend';
 
 const PACK_IMG: Record<string, string> = {
   'everyday-atta': '/img/pack-everyday.png',
@@ -67,4 +68,49 @@ export async function getStorefront(): Promise<{ ingredients: IngProp[]; preMade
 export async function getPreMade(slug: string) {
   const { preMades } = await getStorefront();
   return preMades.find((p) => p.slug === slug) ?? null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Premade detail: disclosed recipe → weighted nutrition (ADR-007)     */
+/* ------------------------------------------------------------------ */
+
+export interface PreMadeDetail {
+  premade: PreMadeProp;
+  nutrition: BlendNutrientRow[];
+  /** Lowest per-row coverage in bps — the honest floor disclosed on the PDP. */
+  minCoverageBps: number;
+  /** Recipe ingredients with no published nutrition (e.g. psyllium, pending). */
+  missingIngredients: Array<{ name: string; bps: number }>;
+  sources: string[];
+}
+
+export async function getPreMadeDetail(slug: string): Promise<PreMadeDetail | null> {
+  const premade = await getPreMade(slug);
+  if (!premade) return null;
+
+  const ids = premade.template.map((t) => t.id);
+  const rows = await db.select().from(ingredientNutrition).where(inArray(ingredientNutrition.ingredientId, ids)).all();
+  const names = await db
+    .select({ id: ingredients.id, name: ingredients.name })
+    .from(ingredients)
+    .where(inArray(ingredients.id, ids))
+    .all();
+
+  const byIng = new Map<string, Record<string, number>>();
+  const srcSet = new Set<string>();
+  for (const r of rows) {
+    const bag = byIng.get(r.ingredientId) ?? {};
+    bag[r.nutrientKey] = r.valueX100 / 100; // DB stores ×100
+    byIng.set(r.ingredientId, bag);
+    srcSet.add(/USDA/i.test(r.source) ? 'USDA' : /IFCT/i.test(r.source) ? 'IFCT 2017' : r.source);
+  }
+
+  const profiles = premade.template.map((t) => ({ bps: t.g, values: byIng.get(t.id) ?? {} }));
+  const nutrition = blendNutrition(profiles, 10000); // 10 kg pack reference
+  const minCoverageBps = nutrition.length > 0 ? Math.min(...nutrition.map((n) => n.coverageBps)) : 0;
+  const missingIngredients = premade.template
+    .filter((t) => !byIng.has(t.id))
+    .map((t) => ({ name: names.find((n) => n.id === t.id)?.name ?? t.id, bps: t.g }));
+
+  return { premade, nutrition, minCoverageBps, missingIngredients, sources: [...srcSet].sort() };
 }

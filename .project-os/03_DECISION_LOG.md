@@ -752,3 +752,29 @@ admin-editable per ADR-008/026).
 module with full transition-matrix tests; `OrderError` closed union mirroring
 `MixErrorCode` discipline. Checkout UI and admin console consume this service
 once auth exists.
+
+## ADR-028 · 2026-10-12 · Forest green is promoted from single accent to structural accent
+
+**Status:** ✅ RESOLVED (client directive, 2026-10-12: "that green color make it
+more use because almost all the re[s t] is filled with light color we can add
+then in background and components. not too much but more then what we have now.")
+
+**Amends:** ADR-025 (which reserved forest to one careful moment per page).
+
+**Decision:** Forest keeps its discipline but gains structural roles:
+1. **Dark bands:** promise strip and footer move to forest-950; the Lab CTA
+   band stays forest-900. At most one dark band per viewport.
+2. **Table headers:** composition + nutrition tables on PDPs get forest-900
+   headers with gold-200 text (heritage-premium, matches the logo's deep green).
+3. **Interactive states:** selected pack pill, active template chip, focus
+   rings, range-slider accent, and primary CTAs (hero "Build my atta", PDP
+   "Order") are forest; hover borders on product cards are forest-600.
+4. **Tints:** benefit panel and nutrient group rows use forest-50/100 washes.
+5. **Gold's job is unchanged:** money, prices, rules, and the certificate
+   frame stay gold — green is for structure and action, gold is for value.
+6. **Never** forest for body copy on light backgrounds; forest-700/800 only
+   for small bold labels/eyebrows.
+
+**Consequences:** layout, home, shop, PDP and LabClient updated in place;
+design-system doc (07) to be refreshed with the new usage table next time it
+is opened. Reversal cost is one commit (token-level classes only).

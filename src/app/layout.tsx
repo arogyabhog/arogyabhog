@@ -17,13 +17,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${playfair.variable} ${manrope.variable} ${noto.variable}`}>
       <body>
         <header className="sticky top-0 z-40 border-b border-ivory-300 bg-ivory-50/90 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center gap-6 px-5 py-3">
+          <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-5">
             <a href="/" className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/brand/logo-mark.png" alt="ArogyaBhog monogram" className="h-10 w-10" />
-              <span className="font-display text-xl font-semibold tracking-tight text-ink-900">ArogyaBhog</span>
+              <img src="/brand/logo-mark.png" alt="ArogyaBhog monogram" className="h-9 w-9 sm:h-10 sm:w-10" />
+              <span className="font-display text-lg font-semibold tracking-tight text-ink-900 sm:text-xl">
+                ArogyaBhog
+              </span>
             </a>
-            <nav className="ml-auto flex items-center gap-5 text-sm font-semibold text-ink-500">
+            <nav className="ml-auto flex items-center gap-3 text-[13px] font-semibold text-ink-500 sm:gap-5 sm:text-sm">
               <a href="/shop" className="hover:text-gold-700">
                 Shop
               </a>
@@ -33,14 +35,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a href="/#promise" className="hidden hover:text-gold-700 sm:block">
                 Our promise
               </a>
-              <span className="rounded-ctrl border border-gold-400 px-3 py-1.5 text-gold-700">Cart · 0</span>
+              <span className="rounded-ctrl border border-forest-600 px-2.5 py-1.5 text-forest-700 sm:px-3">
+                Cart · 0
+              </span>
             </nav>
           </div>
         </header>
 
         {children}
 
-        <footer className="mt-24 bg-ink-900 text-ivory-100">
+        <footer className="mt-24 bg-forest-950 text-ivory-100">
           <div className="gold-rule" />
           <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:grid-cols-3">
             <div>

@@ -165,9 +165,9 @@ export function LabClient(props: {
   };
 
   return (
-    <section id="lab" className="mx-auto max-w-6xl px-5 pt-12">
-      <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">The Lab</div>
-      <h2 className="mt-2 font-display text-3xl font-semibold text-ink-900">Compose your own atta</h2>
+    <section id="lab" className="mx-auto max-w-6xl px-4 pt-10 sm:px-5 sm:pt-12">
+      <div className="text-xs font-bold uppercase tracking-[0.14em] text-forest-700">The Lab</div>
+      <h2 className="mt-2 font-display text-2xl font-semibold text-ink-900 sm:text-3xl">Compose your own atta</h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-7 text-ink-500">
         Set grams per ingredient. We enforce the house rules for you — 60% base grain minimum, safety caps on seeds and
         psyllium, exact pack weights — and price it rupee-by-rupee in the open.
@@ -184,7 +184,7 @@ export function LabClient(props: {
                 key={p}
                 type="button"
                 onClick={() => setPack(p)}
-                className={`rounded-ctrl px-3 py-1.5 text-sm font-bold ${pack === p ? 'bg-gold-700 text-gold-100' : 'border border-ivory-300 text-ink-500 hover:border-gold-400'}`}
+                className={`rounded-ctrl px-3 py-1.5 text-sm font-bold ${pack === p ? 'bg-forest-700 text-forest-50' : 'border border-ivory-300 text-ink-500 hover:border-forest-600'}`}
               >
                 {p / 1000} kg
               </button>
@@ -196,7 +196,7 @@ export function LabClient(props: {
               <button
                 type="button"
                 onClick={snap}
-                className="rounded-ctrl border border-gold-500 px-3 py-1.5 text-xs font-bold text-gold-700 hover:bg-gold-100"
+                className="rounded-ctrl border border-forest-600 px-3 py-1.5 text-xs font-bold text-forest-700 hover:bg-forest-50"
               >
                 Snap to pack
               </button>
@@ -219,7 +219,7 @@ export function LabClient(props: {
                   }}
                   className={`rounded-full border px-3 py-1 text-xs font-bold ${
                     activeSlug === p.slug
-                      ? 'border-gold-500 bg-gold-100 text-gold-700'
+                      ? 'border-forest-600 bg-forest-50 text-forest-700'
                       : 'border-ivory-300 text-ink-500 hover:border-gold-400'
                   }`}
                 >
@@ -237,7 +237,7 @@ export function LabClient(props: {
               return (
                 <div
                   key={ing.id}
-                  className={`rounded-ctrl border p-3 ${g > 0 ? 'border-gold-300 bg-gold-50' : 'border-ivory-200'}`}
+                  className={`rounded-ctrl border p-3 ${g > 0 ? 'border-forest-600/40 bg-forest-50/60' : 'border-ivory-200'}`}
                 >
                   <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
@@ -261,7 +261,9 @@ export function LabClient(props: {
                         )}
                       </div>
                     </div>
-                    <div className="tnum w-24 text-right text-sm font-extrabold text-ink-900">{pct.toFixed(1)}%</div>
+                    <div className="tnum w-16 text-right text-[13px] font-extrabold text-ink-900 sm:w-24 sm:text-sm">
+                      {pct.toFixed(1)}%
+                    </div>
                     <input
                       type="number"
                       min={0}
@@ -272,9 +274,9 @@ export function LabClient(props: {
                       onChange={(e) =>
                         setGrams((prev) => ({ ...prev, [ing.id]: Math.max(0, Number(e.target.value) || 0) }))
                       }
-                      className="tnum w-24 rounded-ctrl border border-ivory-300 bg-ivory-50 px-2 py-1.5 text-right text-sm font-bold text-ink-900 focus:border-gold-500 focus:outline-none disabled:opacity-40"
+                      className="tnum w-[5.5rem] rounded-ctrl border border-ivory-300 bg-ivory-50 px-2 py-1.5 text-right text-sm font-bold text-ink-900 focus:border-forest-600 focus:outline-none disabled:opacity-40 sm:w-24"
                     />
-                    <span className="w-8 text-[11px] font-bold text-ink-400">g</span>
+                    <span className="w-4 text-[10px] font-bold text-ink-400 sm:w-8 sm:text-[11px]">g</span>
                   </div>
                   <input
                     type="range"
@@ -284,7 +286,7 @@ export function LabClient(props: {
                     value={g}
                     disabled={!ing.hasNutrition}
                     onChange={(e) => setGrams((prev) => ({ ...prev, [ing.id]: Number(e.target.value) }))}
-                    className="mt-2 w-full accent-gold-600 disabled:opacity-40"
+                    className="mt-2 w-full accent-forest-700 disabled:opacity-40"
                   />
                 </div>
               );
@@ -306,9 +308,9 @@ export function LabClient(props: {
         </div>
 
         {/* ---- the certificate ---- */}
-        <div className="rounded-card border border-gold-400 bg-white p-6 shadow-warm">
+        <div className="rounded-card border border-gold-400 bg-white p-4 shadow-warm sm:p-6">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-gold-700">
+            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-forest-700">
               Your blend · the full receipt
             </div>
             {res?.provisionalPricing && (
@@ -333,13 +335,13 @@ export function LabClient(props: {
 
           {res && (
             <>
-              <table className="w-full text-[13px]">
+              <table className="w-full text-[12px] sm:text-[13px]">
                 <tbody>
                   {res.mix.composition.map((c) => (
                     <tr key={c.ingredientId} className="border-b border-ivory-100">
                       <td className="py-1.5 pr-2 text-ink-700">{c.name}</td>
                       <td className="tnum py-1.5 pr-2 text-right text-ink-400">{c.displayPercent}</td>
-                      <td className="tnum py-1.5 pr-2 text-right text-ink-400">
+                      <td className="tnum hidden py-1.5 pr-2 text-right text-ink-400 sm:table-cell">
                         {c.weightG.toLocaleString('en-IN')} g
                       </td>
                       <td className="tnum py-1.5 text-right font-semibold text-ink-900">{inr(c.linePaise)}</td>
@@ -385,10 +387,10 @@ export function LabClient(props: {
               </div>
 
               <div className="gold-rule my-4" />
-              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-gold-700">
+              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-forest-700">
                 Nutrition per 100 g · estimated
               </div>
-              <table className="mt-2 w-full text-[13px]">
+              <table className="mt-2 w-full text-[12px] sm:text-[13px]">
                 <tbody>
                   {NUTR.map(([code, label, unit]) => {
                     const n = res.mix.nutrition.per100g.find((x) => x.code === code);
