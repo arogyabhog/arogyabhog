@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { placeOrders } from '@/app/checkout/actions';
+import { placeOrders } from '@/app/(storefront)/checkout/actions';
 import { CART_EVENT, type CartLine, getCart, writeCart } from '@/lib/cart';
 
 interface ProductRef {
