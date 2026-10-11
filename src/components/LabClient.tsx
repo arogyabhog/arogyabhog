@@ -176,7 +176,7 @@ export function LabClient(props: {
 
       <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr]">
         {/* ---- composer ---- */}
-        <div className="rounded-card border border-ivory-300 bg-white p-5 shadow-warm">
+        <div className="rounded-card border border-ivory-300 bg-white p-4 shadow-warm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-500">Pack size</span>
             {packs.map((p) => (
@@ -184,19 +184,19 @@ export function LabClient(props: {
                 key={p}
                 type="button"
                 onClick={() => setPack(p)}
-                className={`rounded-ctrl px-3 py-1.5 text-sm font-bold ${pack === p ? 'bg-forest-700 text-forest-50' : 'border border-ivory-300 text-ink-500 hover:border-forest-600'}`}
+                className={`rounded-ctrl px-2.5 py-1 text-xs font-bold ${pack === p ? 'bg-forest-700 text-forest-50' : 'border border-ivory-300 text-ink-500 hover:border-forest-600'}`}
               >
                 {p / 1000} kg
               </button>
             ))}
-            <span className={`tnum ml-auto text-sm font-bold ${total === pack ? 'text-leaf' : 'text-danger'}`}>
+            <span className={`tnum ml-auto text-xs font-bold ${total === pack ? 'text-leaf' : 'text-danger'}`}>
               {total.toLocaleString('en-IN')} / {pack.toLocaleString('en-IN')} g
             </span>
             {total !== pack && (
               <button
                 type="button"
                 onClick={snap}
-                className="rounded-ctrl border border-forest-600 px-3 py-1.5 text-xs font-bold text-forest-700 hover:bg-forest-50"
+                className="rounded-ctrl border border-forest-600 px-2.5 py-1 text-[11px] font-bold text-forest-700 hover:bg-forest-50"
               >
                 Snap to pack
               </button>
@@ -217,7 +217,7 @@ export function LabClient(props: {
                     setGrams(Object.fromEntries(p.template.map((t) => [t.id, t.g])));
                     setActiveSlug(p.slug);
                   }}
-                  className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                  className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
                     activeSlug === p.slug
                       ? 'border-forest-600 bg-forest-50 text-forest-700'
                       : 'border-ivory-300 text-ink-500 hover:border-gold-400'
@@ -229,7 +229,7 @@ export function LabClient(props: {
             })}
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2">
             {ingredients.map((ing) => {
               const g = grams[ing.id] ?? 0;
               const pct = total > 0 ? (g / total) * 100 : 0;
@@ -237,31 +237,31 @@ export function LabClient(props: {
               return (
                 <div
                   key={ing.id}
-                  className={`rounded-ctrl border p-3 ${g > 0 ? 'border-forest-600/40 bg-forest-50/60' : 'border-ivory-200'}`}
+                  className={`rounded-ctrl border p-2.5 ${g > 0 ? 'border-forest-600/40 bg-forest-50/60' : 'border-ivory-200'}`}
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_3.25rem_5.5rem_1rem] items-center gap-2">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-bold text-ink-900">{ing.name}</div>
-                      <div className="text-[11px] text-ink-500">
+                      <div className="truncate text-[13px] font-bold text-ink-900">{ing.name}</div>
+                      <div className="text-[10px] text-ink-500">
                         {ing.category}
                         {ing.isBaseGrain && (
-                          <span className="ml-2 rounded-full bg-leaf-soft px-2 py-0.5 font-bold text-leaf">
+                          <span className="ml-2 rounded-full bg-leaf-soft px-1.5 py-0.5 font-bold text-leaf">
                             base grain
                           </span>
                         )}
                         {capPct !== null && (
-                          <span className="ml-1 rounded-full bg-warn-soft px-2 py-0.5 font-bold text-warn">
+                          <span className="ml-1 rounded-full bg-warn-soft px-1.5 py-0.5 font-bold text-warn">
                             ≤ {capPct}%
                           </span>
                         )}
                         {!ing.hasNutrition && (
-                          <span className="ml-1 rounded-full bg-danger-soft px-2 py-0.5 font-bold text-danger">
+                          <span className="ml-1 rounded-full bg-danger-soft px-1.5 py-0.5 font-bold text-danger">
                             nutrition pending
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="tnum text-right text-[13px] font-extrabold text-ink-900 sm:text-sm">
+                    <div className="tnum text-right text-xs font-extrabold text-ink-900 sm:text-sm">
                       {pct.toFixed(1)}%
                     </div>
                     <input
@@ -274,7 +274,7 @@ export function LabClient(props: {
                       onChange={(e) =>
                         setGrams((prev) => ({ ...prev, [ing.id]: Math.max(0, Number(e.target.value) || 0) }))
                       }
-                      className="tnum w-full rounded-ctrl border border-ivory-300 bg-ivory-50 px-2 py-1.5 text-right text-sm font-bold text-ink-900 focus:border-forest-600 focus:outline-none disabled:opacity-40"
+                      className="tnum w-full rounded-ctrl border border-ivory-300 bg-ivory-50 px-1.5 py-1 text-right text-[13px] font-bold text-ink-900 focus:border-forest-600 focus:outline-none disabled:opacity-40"
                     />
                     <span className="text-[10px] font-bold text-ink-500 sm:text-[11px]">g</span>
                   </div>
@@ -286,14 +286,14 @@ export function LabClient(props: {
                     value={g}
                     disabled={!ing.hasNutrition}
                     onChange={(e) => setGrams((prev) => ({ ...prev, [ing.id]: Number(e.target.value) }))}
-                    className="mt-2 w-full accent-forest-700 disabled:opacity-40"
+                    className="mt-1.5 w-full disabled:opacity-40"
                   />
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-5">
+          <div className="mt-4">
             <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.1em] text-ink-500">
               <span>Base grain floor · 60%</span>
               <span className={`tnum ${basePct >= 60 ? 'text-leaf' : 'text-danger'}`}>{basePct.toFixed(1)}%</span>
@@ -338,13 +338,13 @@ export function LabClient(props: {
               <table className="w-full text-[12px] sm:text-[13px]">
                 <tbody>
                   {res.mix.composition.map((c) => (
-                    <tr key={c.ingredientId} className="border-b border-ivory-100">
-                      <td className="py-1.5 pr-2 text-ink-700">{c.name}</td>
+                    <tr key={c.ingredientId} className="border-b border-ivory-200">
+                      <td className="py-2 pr-2 text-ink-700">{c.name}</td>
                       <td className="tnum py-1.5 pr-2 text-right text-ink-500">{c.displayPercent}</td>
                       <td className="tnum hidden py-1.5 pr-2 text-right text-ink-500 sm:table-cell">
                         {c.weightG.toLocaleString('en-IN')} g
                       </td>
-                      <td className="tnum py-1.5 text-right font-semibold text-ink-900">{inr(c.linePaise)}</td>
+                      <td className="tnum py-2 text-right font-semibold text-ink-900">{inr(c.linePaise)}</td>
                     </tr>
                   ))}
                   <tr>

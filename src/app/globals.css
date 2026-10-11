@@ -89,3 +89,36 @@ textarea {
 body {
   overflow-x: clip;
 }
+
+/* Branded, compact range sliders — also removes every trace of the browser's
+   default blue track/thumb (client-reported "blue colour"). */
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-ivory-300);
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: var(--color-forest-700);
+  border: 2px solid var(--color-ivory-50);
+  box-shadow: 0 0 0 1px var(--color-forest-700);
+}
+input[type="range"]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: var(--color-forest-700);
+  border: 2px solid var(--color-ivory-50);
+  box-shadow: 0 0 0 1px var(--color-forest-700);
+}
+input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Manrope, Noto_Sans_Devanagari, Playfair_Display } from 'next/font/google';
+import { NavBar } from '@/components/NavBar';
 import './globals.css';
 
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair', display: 'swap' });
@@ -16,53 +17,60 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${playfair.variable} ${manrope.variable} ${noto.variable}`}>
       <body>
-        <header className="sticky top-0 z-40 border-b border-ivory-300 bg-ivory-50/90 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-5">
-            <a href="/" className="flex items-center gap-3">
+        {/* Sticky header, fixed h-16, three zones: brand · nav · cart */}
+        <header className="sticky top-0 z-40 border-b border-ivory-300 bg-ivory-50/95 backdrop-blur">
+          <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-6">
+            <a href="/" className="flex shrink-0 items-center gap-2.5 sm:gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/brand/logo-mark.png" alt="ArogyaBhog monogram" className="h-8 w-8 sm:h-10 sm:w-10" />
-              <span className="font-display text-base font-semibold tracking-tight text-ink-900 sm:text-xl">
-                ArogyaBhog
-              </span>
+              <img src="/brand/logo-mark.png" alt="ArogyaBhog monogram" className="h-9 w-9" />
+              <span className="font-display text-lg font-semibold tracking-tight text-ink-900">ArogyaBhog</span>
             </a>
-            <nav className="ml-auto flex items-center gap-2.5 text-[12px] font-semibold text-ink-500 sm:gap-5 sm:text-sm">
-              <a href="/shop" className="hover:text-gold-700">
-                Shop
-              </a>
-              <a href="/lab" className="hover:text-gold-700">
-                The Lab
-              </a>
-              <a href="/#promise" className="hidden hover:text-gold-700 sm:block">
-                Our promise
-              </a>
-              <span className="rounded-ctrl border border-forest-600 px-2 py-1 text-[11px] text-forest-700 sm:px-3 sm:py-1.5 sm:text-sm">
-                Cart · 0
-              </span>
-            </nav>
+            <NavBar />
+            <a
+              href="/shop"
+              className="flex shrink-0 items-center gap-2 rounded-ctrl border border-forest-600 px-2.5 py-1.5 text-xs font-bold text-forest-700 sm:px-3 sm:text-sm"
+            >
+              Cart
+              <span className="tnum rounded-full bg-forest-600 px-1.5 text-[10px] font-bold text-forest-50">0</span>
+            </a>
           </div>
         </header>
 
         {children}
 
-        <footer className="mt-24 bg-forest-950 text-ivory-100">
-          <div className="gold-rule" />
-          <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:grid-cols-3">
-            <div>
+        <footer className="mt-20 bg-forest-950 sm:mt-24">
+          <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
+            <div className="space-y-3 md:col-span-2">
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/brand/logo-mark.png" alt="" className="h-9 w-9 rounded-full bg-ivory-50 p-0.5" />
+                <span className="font-display text-xl font-semibold text-ivory-50">ArogyaBhog</span>
+              </div>
               <div className="font-hindi text-lg text-gold-300">रोटी में स्वाद, स्वास्थ्य के साथ</div>
-              <p className="mt-3 max-w-xs text-sm leading-6 text-ivory-200/85">
+              <p className="max-w-sm text-sm leading-6 text-forest-100/80">
                 Milled weekly in Kanpur, delivered by our own drivers. COD and UPI QR — your money reaches us directly,
                 never a middleman.
               </p>
             </div>
-            <div className="text-sm leading-7 text-ivory-200/80">
-              <div className="font-semibold uppercase tracking-widest text-gold-300">Transparency</div>
-              Nutrition is estimated from published composition tables (IFCT 2017, USDA where IFCT is silent) — never
-              lab-analysed, and labelled so everywhere.
+            <div className="space-y-3">
+              <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-300">Transparency</div>
+              <p className="text-sm leading-6 text-forest-100/80">
+                Nutrition is estimated from published composition tables (IFCT 2017, USDA where IFCT is silent) — never
+                lab-analysed, and labelled so everywhere.
+              </p>
             </div>
-            <div className="text-sm leading-7 text-ivory-200/80">
-              <div className="font-semibold uppercase tracking-widest text-gold-300">House rules</div>
-              No returns, by design — we would rather mill it right the first time. FSSAI licence number appears here at
-              launch.
+            <div className="space-y-3">
+              <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-300">House rules</div>
+              <p className="text-sm leading-6 text-forest-100/80">
+                No returns, by design — we would rather mill it right the first time. FSSAI licence number appears here
+                at launch.
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-forest-800">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-forest-100/60 sm:px-6">
+              <span>© 2026 ArogyaBhog · Kanpur, Uttar Pradesh</span>
+              <span className="tnum">Prices GST-inclusive 5% · HSN 11010000</span>
             </div>
           </div>
         </footer>

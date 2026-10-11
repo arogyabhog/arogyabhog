@@ -8,7 +8,8 @@ const targets = [
 ];
 const sizes = [
   [390, 844, 'mobile'],
-  [1280, 900, 'desktop'],
+  [1050, 900, 'mid'],
+  [1440, 900, 'desktop'],
 ];
 
 const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });

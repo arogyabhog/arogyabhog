@@ -42,3 +42,4 @@ uploads/
 .config/
 shots/
 .sudo_as_admin_successful
+.ref/

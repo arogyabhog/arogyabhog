@@ -4,6 +4,7 @@
       "**",
       "!**/*.css",
       "!.cache",
+      "!.ref",
       "!migrations",
       "!discovery",
       "!package-lock.json",
