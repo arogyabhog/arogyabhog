@@ -178,7 +178,7 @@ export function LabClient(props: {
         {/* ---- composer ---- */}
         <div className="rounded-card border border-ivory-300 bg-white p-5 shadow-warm">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-400">Pack size</span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-500">Pack size</span>
             {packs.map((p) => (
               <button
                 key={p}
@@ -205,7 +205,7 @@ export function LabClient(props: {
 
           {/* Start-from-a-blend (research lesson L2: the Lab opens from premade templates) */}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-400">Start from a blend</span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-500">Start from a blend</span>
             {preMades.map((p) => {
               const short = p.name.replace('ArogyaBhog ', '').replace(' Atta', '');
               return (
@@ -239,10 +239,10 @@ export function LabClient(props: {
                   key={ing.id}
                   className={`rounded-ctrl border p-3 ${g > 0 ? 'border-forest-600/40 bg-forest-50/60' : 'border-ivory-200'}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="min-w-0 flex-1">
+                  <div className="grid grid-cols-[minmax(0,1fr)_3.25rem_5.5rem_1rem] items-center gap-2">
+                    <div className="min-w-0">
                       <div className="truncate text-sm font-bold text-ink-900">{ing.name}</div>
-                      <div className="text-[11px] text-ink-400">
+                      <div className="text-[11px] text-ink-500">
                         {ing.category}
                         {ing.isBaseGrain && (
                           <span className="ml-2 rounded-full bg-leaf-soft px-2 py-0.5 font-bold text-leaf">
@@ -261,7 +261,7 @@ export function LabClient(props: {
                         )}
                       </div>
                     </div>
-                    <div className="tnum w-16 text-right text-[13px] font-extrabold text-ink-900 sm:w-24 sm:text-sm">
+                    <div className="tnum text-right text-[13px] font-extrabold text-ink-900 sm:text-sm">
                       {pct.toFixed(1)}%
                     </div>
                     <input
@@ -274,9 +274,9 @@ export function LabClient(props: {
                       onChange={(e) =>
                         setGrams((prev) => ({ ...prev, [ing.id]: Math.max(0, Number(e.target.value) || 0) }))
                       }
-                      className="tnum w-[5.5rem] rounded-ctrl border border-ivory-300 bg-ivory-50 px-2 py-1.5 text-right text-sm font-bold text-ink-900 focus:border-forest-600 focus:outline-none disabled:opacity-40 sm:w-24"
+                      className="tnum w-full rounded-ctrl border border-ivory-300 bg-ivory-50 px-2 py-1.5 text-right text-sm font-bold text-ink-900 focus:border-forest-600 focus:outline-none disabled:opacity-40"
                     />
-                    <span className="w-4 text-[10px] font-bold text-ink-400 sm:w-8 sm:text-[11px]">g</span>
+                    <span className="text-[10px] font-bold text-ink-500 sm:text-[11px]">g</span>
                   </div>
                   <input
                     type="range"
@@ -294,7 +294,7 @@ export function LabClient(props: {
           </div>
 
           <div className="mt-5">
-            <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.1em] text-ink-400">
+            <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.1em] text-ink-500">
               <span>Base grain floor · 60%</span>
               <span className={`tnum ${basePct >= 60 ? 'text-leaf' : 'text-danger'}`}>{basePct.toFixed(1)}%</span>
             </div>
@@ -328,7 +328,7 @@ export function LabClient(props: {
             </div>
           )}
           {!err && !res && (
-            <div className="py-10 text-center text-sm text-ink-400">
+            <div className="py-10 text-center text-sm text-ink-500">
               Add at least two ingredients to see the receipt.
             </div>
           )}
@@ -340,8 +340,8 @@ export function LabClient(props: {
                   {res.mix.composition.map((c) => (
                     <tr key={c.ingredientId} className="border-b border-ivory-100">
                       <td className="py-1.5 pr-2 text-ink-700">{c.name}</td>
-                      <td className="tnum py-1.5 pr-2 text-right text-ink-400">{c.displayPercent}</td>
-                      <td className="tnum hidden py-1.5 pr-2 text-right text-ink-400 sm:table-cell">
+                      <td className="tnum py-1.5 pr-2 text-right text-ink-500">{c.displayPercent}</td>
+                      <td className="tnum hidden py-1.5 pr-2 text-right text-ink-500 sm:table-cell">
                         {c.weightG.toLocaleString('en-IN')} g
                       </td>
                       <td className="tnum py-1.5 text-right font-semibold text-ink-900">{inr(c.linePaise)}</td>
@@ -368,11 +368,11 @@ export function LabClient(props: {
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-1 text-[11px] text-ink-400" colSpan={3}>
+                    <td className="py-1 text-[11px] text-ink-500" colSpan={3}>
                       of which CGST {inr(res.mix.pricing.cgstPaise)} + SGST {inr(res.mix.pricing.sgstPaise)} · HSN
                       11010000
                     </td>
-                    <td className="tnum py-1 text-right text-[11px] text-ink-400">{inr(res.mix.pricing.gstPaise)}</td>
+                    <td className="tnum py-1 text-right text-[11px] text-ink-500">{inr(res.mix.pricing.gstPaise)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -382,7 +382,7 @@ export function LabClient(props: {
                   {inr(res.mix.pricing.totalPaise)}
                 </span>
               </div>
-              <div className="mt-1 text-[11px] text-ink-400">
+              <div className="mt-1 text-[11px] text-ink-500">
                 + {inr(res.mix.pricing.deliveryPaise)} delivery per order, added at checkout. COD or UPI QR.
               </div>
 
@@ -401,14 +401,14 @@ export function LabClient(props: {
                         <td className="tnum py-1 text-right font-semibold text-ink-900">
                           {(n.valueScaled / 100).toFixed(2)}
                         </td>
-                        <td className="py-1 pl-1 text-[11px] text-ink-400">{unit}</td>
+                        <td className="py-1 pl-1 text-[11px] text-ink-500">{unit}</td>
                         <td className="py-1 text-right text-[10px] font-bold text-gold-600">{n.sources.join(' + ')}</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-              <p className="mt-3 text-[11px] leading-5 text-ink-400">{res.notice}</p>
+              <p className="mt-3 text-[11px] leading-5 text-ink-500">{res.notice}</p>
             </>
           )}
         </div>

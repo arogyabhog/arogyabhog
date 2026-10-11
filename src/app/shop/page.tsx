@@ -18,7 +18,7 @@ export default async function ShopPage() {
           <a
             key={p.slug}
             href={`/shop/${p.slug}`}
-            className="group overflow-hidden rounded-card border border-ivory-300 bg-white shadow-warm transition hover:border-forest-600"
+            className="group overflow-hidden rounded-card border border-ivory-300 bg-white shadow-warm transition hover:border-gold-400"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -37,13 +37,13 @@ export default async function ShopPage() {
                   </li>
                 ))}
                 {p.lines.length > 4 && (
-                  <li className="text-ink-400">+ {p.lines.length - 4} more — full list on the page</li>
+                  <li className="text-ink-500">+ {p.lines.length - 4} more — full list on the page</li>
                 )}
               </ul>
               <div className="mt-4 flex items-baseline justify-between">
                 <div className="tnum text-xl font-extrabold text-ink-900">
                   ₹{(p.sellPaise / 100).toLocaleString('en-IN')}
-                  <span className="ml-1 text-xs font-medium text-ink-400">/ 10 kg</span>
+                  <span className="ml-1 text-xs font-medium text-ink-500">/ 10 kg</span>
                 </div>
                 {p.provisional && (
                   <span className="rounded-full bg-warn-soft px-2 py-1 text-[10px] font-bold text-warn">

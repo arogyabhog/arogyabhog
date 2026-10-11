@@ -82,7 +82,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <span className="tnum font-display text-3xl font-bold text-ink-900">
               ₹{(p.sellPaise / 100).toLocaleString('en-IN')}
             </span>
-            <span className="text-sm text-ink-400">
+            <span className="text-sm text-ink-500">
               GST-inclusive · ₹{(p.sellPaise / 10 / 100).toLocaleString('en-IN')}/kg
             </span>
             {p.provisional && (
@@ -106,7 +106,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               Tweak this recipe in the Lab →
             </a>
           </div>
-          <p className="mt-2 text-[11px] text-ink-400">
+          <p className="mt-2 text-[11px] text-ink-500">
             Checkout opens in the next release — the button is honest about that.
           </p>
 
@@ -143,7 +143,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   <tr key={l.name} className="border-b border-ivory-100">
                     <td className="py-2 pr-2 text-ink-700">{l.name}</td>
                     <td className="tnum py-2 text-right font-bold text-ink-900">{(l.bps / 100).toFixed(2)}%</td>
-                    <td className="tnum py-2 pl-4 text-right text-ink-400">{l.bps.toLocaleString('en-IN')} g</td>
+                    <td className="tnum py-2 pl-4 text-right text-ink-500">{l.bps.toLocaleString('en-IN')} g</td>
                   </tr>
                 ))}
                 <tr>
@@ -168,7 +168,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="overflow-x-auto p-5">
             <table className="w-full min-w-[340px] text-[13px]">
               <thead>
-                <tr className="border-b border-ivory-300 text-[11px] uppercase tracking-wide text-ink-400">
+                <tr className="border-b border-ivory-300 text-[11px] uppercase tracking-wide text-ink-500">
                   <th className="pb-2 text-left font-bold">Nutrient</th>
                   <th className="tnum pb-2 text-right font-bold">Per 100 g</th>
                   <th className="tnum pb-2 pl-4 text-right font-bold">Per 10 kg pack</th>
@@ -201,7 +201,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </tbody>
             </table>
           </div>
-          <div className="border-t border-ivory-200 px-5 py-4 text-[11px] leading-5 text-ink-400">
+          <div className="border-t border-ivory-200 px-5 py-4 text-[11px] leading-5 text-ink-500">
             Estimated from published composition tables ({sources.join(' + ')}) weighted by the exact recipe — never
             lab-analysed, and labelled so.
             {partial && (

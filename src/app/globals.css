@@ -68,3 +68,24 @@ body {
   height: 1px;
   background: linear-gradient(90deg, var(--color-gold-500), transparent);
 }
+
+/* No blue anywhere: kill UA tap-highlight (Android's blue-grey flash), brand
+   every focus ring, and make native form controls follow the palette. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 2px solid var(--color-forest-600);
+  outline-offset: 2px;
+}
+input,
+button,
+select,
+textarea {
+  accent-color: var(--color-forest-700);
+  caret-color: var(--color-gold-700);
+}
+/* Safety net: nothing may widen the page horizontally (menu-bar complaint). */
+body {
+  overflow-x: clip;
+}

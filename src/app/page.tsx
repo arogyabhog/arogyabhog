@@ -18,7 +18,7 @@ export default async function Home() {
           alt="Brass bowls of whole grains and fresh-milled flour on ivory linen"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-ivory-50 via-ivory-50/90 to-ivory-50/30 sm:bg-gradient-to-r sm:via-ivory-50/85 sm:to-transparent" />
+        <div className="absolute inset-0 bg-ivory-50/90 sm:bg-gradient-to-r sm:from-ivory-50 sm:via-ivory-50/85 sm:to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-5 sm:py-24 lg:py-32">
           <div className="max-w-xl">
             <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">
@@ -55,19 +55,19 @@ export default async function Home() {
         <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-5">
           <div>
             <div className="text-sm font-extrabold text-gold-200">Our own drivers</div>
-            <p className="mt-1 text-[13px] leading-6 text-forest-100/75">
+            <p className="mt-1 text-[13px] leading-6 text-forest-100/90">
               No courier roulette. Fresh packs travel in our bags, with people we employ.
             </p>
           </div>
           <div>
             <div className="text-sm font-extrabold text-gold-200">COD &amp; UPI QR — no middleman</div>
-            <p className="mt-1 text-[13px] leading-6 text-forest-100/75">
+            <p className="mt-1 text-[13px] leading-6 text-forest-100/90">
               Pay cash on delivery or scan our QR. Your money reaches us directly, never a gateway.
             </p>
           </div>
           <div>
             <div className="text-sm font-extrabold text-gold-200">The receipt is the recipe</div>
-            <p className="mt-1 text-[13px] leading-6 text-forest-100/75">
+            <p className="mt-1 text-[13px] leading-6 text-forest-100/90">
               Exact percentages, every fee on its own line, GST split shown. Estimated nutrition, labelled so.
             </p>
           </div>
@@ -115,7 +115,7 @@ export default async function Home() {
                 <div className="mt-4 flex items-baseline justify-between">
                   <div className="tnum text-xl font-extrabold text-ink-900">
                     ₹{(p.sellPaise / 100).toLocaleString('en-IN')}
-                    <span className="ml-1 text-xs font-medium text-ink-400">/ 10 kg</span>
+                    <span className="ml-1 text-xs font-medium text-ink-500">/ 10 kg</span>
                   </div>
                   {p.provisional && (
                     <span className="rounded-full bg-warn-soft px-2 py-1 text-[10px] font-bold text-warn">
