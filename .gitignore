@@ -41,3 +41,4 @@ uploads/
 .ssh/
 .config/
 shots/
+.sudo_as_admin_successful
