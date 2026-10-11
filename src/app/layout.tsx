@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Manrope, Noto_Sans_Devanagari, Playfair_Display } from 'next/font/google';
+import { CartButton } from '@/components/CartButton';
 import { NavBar } from '@/components/NavBar';
 import './globals.css';
 
@@ -26,13 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="font-display text-lg font-semibold tracking-tight text-ink-900">ArogyaBhog</span>
             </a>
             <NavBar />
-            <a
-              href="/shop"
-              className="flex shrink-0 items-center gap-2 rounded-ctrl border border-forest-600 px-2.5 py-1.5 text-xs font-bold text-forest-700 sm:px-3 sm:text-sm"
-            >
-              Cart
-              <span className="tnum rounded-full bg-forest-600 px-1.5 text-[10px] font-bold text-forest-50">0</span>
-            </a>
+            <CartButton />
           </div>
         </header>
 

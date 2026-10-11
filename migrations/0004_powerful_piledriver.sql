@@ -1,0 +1,1 @@
+ALTER TABLE `stores` ADD `upi_vpa` text DEFAULT 'arogyabhog@upi' NOT NULL;

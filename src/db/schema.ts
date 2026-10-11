@@ -23,6 +23,9 @@ export const stores = sqliteTable('stores', {
   deliveryFeePaise: integer('delivery_fee_paise').notNull(),
   /** 5% = 500. Displayed prices are GST-inclusive (ADR-009); CA-editable. */
   gstRateBps: integer('gst_rate_bps').notNull().default(500),
+  /** Providerless UPI: the merchant VPA the QR encodes (ADR-010). Placeholder
+   *  until the client supplies their real bank VPA; admin-editable later. */
+  upiVpa: text('upi_vpa').notNull().default('arogyabhog@upi'),
   referralCreditCap: integer('referral_credit_cap').notNull().default(10),
   refereeBonusCredits: integer('referee_bonus_credits').notNull().default(1),
   createdAt: integer('created_at')

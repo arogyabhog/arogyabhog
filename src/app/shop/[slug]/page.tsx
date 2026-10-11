@@ -84,7 +84,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
 
           <div className="space-y-3 border-y border-ivory-300 py-5">
-            <PackPicker packs={p.packs} />
+            <PackPicker packs={p.packs} slug={p.slug} />
             {p.provisional && (
               <span className="inline-block rounded-full bg-warn-soft px-2.5 py-1 text-[10px] font-bold text-warn">
                 indicative pricing — client review pending

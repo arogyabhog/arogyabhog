@@ -25,12 +25,20 @@ console.log('login →', (await page.locator('text=Audit entries').count()) > 0 
 // 4. audit log shows the login events
 await page.goto(`${base}/admin/audit`, { waitUntil: 'networkidle' });
 const auditHtml = await page.content();
-console.log('audit rows →', auditHtml.includes('auth.login') && auditHtml.includes('auth.login_failed') ? 'PASS events' : 'FAIL events');
+console.log(
+  'audit rows →',
+  auditHtml.includes('auth.login') && auditHtml.includes('auth.login_failed') ? 'PASS events' : 'FAIL events',
+);
 
 // 5. CSV export downloads with header + rows (request context shares cookies)
 const resp = await page.request.get(`${base}/admin/audit/export.csv`);
 const csv = await resp.text();
-console.log('csv →', resp.status() === 200 && csv.startsWith('id,at_iso') && csv.includes('auth.login') ? 'PASS export' : `FAIL ${resp.status()}`);
+console.log(
+  'csv →',
+  resp.status() === 200 && csv.startsWith('id,at_iso') && csv.includes('auth.login')
+    ? 'PASS export'
+    : `FAIL ${resp.status()}`,
+);
 
 // 6. sign out → /admin bounces again
 await page.goto(`${base}/admin`, { waitUntil: 'networkidle' });
@@ -44,7 +52,10 @@ await page.fill('input[name="email"]', 'manager@arogyabhog.local');
 await page.fill('input[name="password"]', 'arogyabhog-dev-manager');
 await page.click('button[type="submit"]');
 await page.waitForURL(/\/admin$/, { timeout: 15000 });
-console.log('manager login →', (await page.locator('text=Manager console').count()) > 0 ? 'PASS scoped' : 'FAIL scoped');
+console.log(
+  'manager login →',
+  (await page.locator('text=Manager console').count()) > 0 ? 'PASS scoped' : 'FAIL scoped',
+);
 await page.screenshot({ path: 'shots/admin.png' });
 
 await b.close();

@@ -1,15 +1,12 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-11T14:45Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T15:27Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* ed0baed  (HEAD -> main) feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
-* ab1cb70  (origin/main) docs — ADR-029/030 + state + graph
-* 89776fe  feat — product families (locked premades + 6 single-grain flours + custom-only Lab, ADR-029) and psyllium nutrition resolved via Frida NO national table (ADR-030); pack picker, per-1kg disclosure, shop/home restructure; tests 112/112
-* f552137  docs — production serving note + graph
+* f552137  (HEAD -> main, origin/main) docs — production serving note + graph
 * abfc8d2  ops — production build + no-store headers; preview stale-cache lockdown
 * 50f45da  chore — biome ignores Next-generated next-env.d.ts
 * 8084d2b  style — biome.json layout
@@ -47,8 +44,6 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
 - **2026-10-11** 580c9c6 — feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
 - **2026-10-11** a5b7bdc — feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
 - **2026-10-11** ed21602 — feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
-- **2026-10-11** 89776fe — feat — product families (locked premades + 6 single-grain flours + custom-only Lab, ADR-029) and psyllium nutrition resolved via Frida NO national table (ADR-030); pack picker, per-1kg disclosure, shop/home restructure; tests 112/112
-- **2026-10-11** ed0baed — feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
 
 
 ## Tracked tree
@@ -72,7 +67,6 @@ brand-board.html
   FINDINGS.md
   SEED_RATES.md
   arogyabhog-main-sheet.xlsx
-  frida-national-table-nutrients.json
   ifct2017-mapped-nutrients.json
   seed-ingredient-rates.json
   seed-premade-recipes.json
@@ -80,12 +74,8 @@ brand-board.html
 drizzle.config.ts
   0000_black_puma.sql
   0001_talented_master_chief.sql
-  0002_abnormal_morbius.sql
-  0003_warm_luke_cage.sql
     0000_snapshot.json
     0001_snapshot.json
-    0002_snapshot.json
-    0003_snapshot.json
     _journal.json
 next-env.d.ts
 next.config.ts
@@ -95,39 +85,23 @@ postcss.config.mjs
     logo-mark.png
     logo-wordmark.png
     hero-grains.png
-    pack-bajra.png
     pack-everyday.png
     pack-high-protein.png
-    pack-jau.png
-    pack-jowar.png
-    pack-moong.png
-    pack-ragi.png
     pack-sugar-care.png
     pack-thyro-care.png
     pack-vitality.png
-    pack-wheat.png
-  admin-flow.mjs
   db-setup.ts
   history-graph.sh
   screenshot.mjs
-          route.ts
-        page.tsx
-      layout.tsx
-      logout-button.tsx
-      page.tsx
             route.ts
     globals.css
       page.tsx
     layout.tsx
-      actions.ts
-      page.tsx
     page.tsx
         page.tsx
       page.tsx
     LabClient.tsx
     NavBar.tsx
-    PackPicker.tsx
-    ProductCard.tsx
     client.ts
     schema.ts
     seed.ts
@@ -137,15 +111,11 @@ postcss.config.mjs
     nutrition-blend.ts
     order-engine.test.ts
     order-engine.ts
-    audit-export.ts
-    auth.test.ts
-    auth.ts
     contracts.ts
     mix-service.test.ts
     mix-service.ts
     order-service.test.ts
     order-service.ts
-    passwords.ts
     storefront-data.ts
 tsconfig.json
 vitest.config.ts
@@ -153,6 +123,6 @@ vitest.config.ts
 
 ## Head
 
-ed0baedfef90ef932f4203d21aa25d3eed9e70cb
-2026-10-11 14:45:41 +0000
-feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
+f552137beda160942d498e757738f1b7a1aabf7b
+2026-10-11 09:56:03 +0000
+docs — production serving note + graph
