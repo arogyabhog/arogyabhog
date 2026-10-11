@@ -1,13 +1,15 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-11T09:09Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T09:23Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* ed21602  (HEAD -> main) feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
-* d926c37  (origin/main) docs — ADR-027, current state, history graph
+* 9755750  (HEAD -> main) fix — root-cause the four reported UI bugs: Lab min-content overflow (grid tracks), UA blue chrome (global focus/tap/accent), green off product cards, mobile hero legibility + contrast sweep; add playwright screenshot/overflow harness
+* 5c94bee  (origin/main) docs — ADR-028 + current state + graph
+* ed21602  feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
+* d926c37  docs — ADR-027, current state, history graph
 * a5b7bdc  feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
 * 457bad5  docs — history graph + current state
 * 580c9c6  feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
@@ -50,6 +52,7 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
   08_STACK_COMPARISON.md
   09_COMPETITIVE_RESEARCH.md
   10_HISTORY_GRAPH.md
+.sudo_as_admin_successful
 README.md
 biome.json
 brand-board.html
@@ -80,6 +83,7 @@ postcss.config.mjs
     pack-vitality.png
   db-setup.ts
   history-graph.sh
+  screenshot.mjs
             route.ts
     globals.css
       page.tsx
@@ -109,6 +113,6 @@ vitest.config.ts
 
 ## Head
 
-ed21602710cdda8b80b004bc10efe9e1a67948b4
-2026-10-11 09:09:25 +0000
-feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
+975575007060a44ca99916b66880ad937dce16c4
+2026-10-11 09:23:05 +0000
+fix — root-cause the four reported UI bugs: Lab min-content overflow (grid tracks), UA blue chrome (global focus/tap/accent), green off product cards, mobile hero legibility + contrast sweep; add playwright screenshot/overflow harness
