@@ -1,9 +1,9 @@
 # 01 — CURRENT STATE
 
-**Phase:** 3 — VERTICAL SLICE (calculation engine built & verified; UI not started)
-**Last updated:** 2026-10-10
+**Phase:** 3 — VERTICAL SLICE (customer storefront/checkout implemented; admin order operations underway)
+**Last updated:** 2026-10-11
 **Git SHA:** see `git log`
-**Active branch:** `main`
+**Active branch:** `feat/admin-order-operations`
 
 ---
 
@@ -18,13 +18,13 @@
 | Pricing model | ✅ DECIDED — admin sets 18 rates by hand + mandatory Price Consistency Checker (ADR-008) |
 | Referral system | ✅ DECIDED — credits on first DELIVERED order, cap 10, referee bonus (ADR-017) |
 | Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
-| Database schema | 🟡 DRAFTED in `04_DATABASE_SCHEMA.md` — awaiting review |
-| API contracts | 🟡 DRAFTED in `06_API_CONTRACTS.md` — awaiting review |
-| **Calculation engine** | ✅ **BUILT & VERIFIED** — `src/domain/mix-engine.ts`, **54 tests green** incl. fast-check property suites and the client's real defects as regression tests |
+| Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0004; living design doc remains reviewable |
+| API / server boundaries | ✅ Mix calculation API, Zod validation, and authenticated checkout/order server actions implemented |
+| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 122 project tests currently green |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | ❌ NOT STARTED — begins after stack decision |
+| UI layer | ✅ Storefront, product pages, Lab, customer accounts, checkout, admin auth/audit, and admin order queue implemented; server-side action flow verified by state-machine and scope tests |
 
 ---
 
@@ -85,18 +85,14 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Resolve BLOCKER-2 (referral decisions) — small, quick
-2. Resolve BLOCKER-1 (ingredient selling rates) — needs client input
-3. Review `04_DATABASE_SCHEMA.md` and `06_API_CONTRACTS.md`
-4. **Then** and only then: `git` scaffold, toolchain install, vertical slice
-   `DB → mix calculation engine → API → UI` with property-based tests first
-5. Obtain logo → brand system → theme
+1. Wire referral credit awards idempotently to the referee's first DELIVERED order.
+2. Add owner tools for provisional ingredient-rate review, price consistency, and store/product settings.
+3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
+4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end order/operations checks.
 
-## DELIBERATELY NOT DONE
+## DELIBERATELY DEFERRED
 
-No `package.json`, no dependencies installed, no framework scaffold, no migrations,
-no product code. Held until schema review, because C1–C4 each had schema impact and
-writing code against an unreviewed schema means rewriting it.
+Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city physical database separation remain explicit non-goals unless the client changes scope.
 
 ---
 
@@ -142,3 +138,5 @@ writing code against an unreviewed schema means rewriting it.
 15. **2026-10-13 — Pack rule (ADR-029 amendment) + auth/RBAC slice (ADR-031).** 5 kg pack now Lab-only; all boxed products 10/15/20 kg (seed + reseed). Auth: scrypt hashes, opaque cookie sessions (sessions table, 30 d, httpOnly/lax), /login page + server actions, /admin layout gate (ADMIN global / MANAGER store-scoped), overview cards, /admin/audit table + export.csv (RFC-4180, gated), audit writes on login/failed/logout/export. Dev creds owner@/manager@arogyabhog.local (env-overridable, hashed at seed). Browser-verified flow: 7/7 PASS (scripts/admin-flow.mjs): anon bounce, bad-password banner, login, audit events, CSV, logout bounce, manager scoping. Tests 119/119 (auth core + CSV quoting). Migration 0003 (sessions).
 
 16. **2026-10-13 — Checkout slice (ADR-032).** Customer register/login (referral code → referredByCode + 2 free-delivery credits; safe `next` bounce for guests), localStorage basket (`ab_cart_v1`) with header CartButton + PDP add-to-cart, `/checkout` (per-line `createPremadeOrder`, contact validation, COD/UPI choice, CartClearer on `?placed=1`), `/orders` + `/orders/[id]` (owner/staff RBAC, receipt, timeline, providerless UPI QR `upi://pay?...` from `stores.upiVpa` (migration 0004), attest → AWAITING_VERIFICATION). Browser flow 8/8 PASS (scripts/checkout-flow.mjs): register→cart→COD order→UPI order→QR→attest→list. Gates: tsc, 119/119, lint 0 warnings, build clean.
+
+17. **2026-10-11 — Admin order operations slice.** Added `/admin/orders` queue (latest 50; ADMIN global, MANAGER filtered to assigned store) with shipping/contact/order snapshot, fulfilment transitions, and payment confirm/reject controls. Server actions re-read the session, validate inputs with Zod, check per-order store authorization, then call existing transition service (which enforces legal state changes and appends order timeline + audit records). Added property-based RBAC boundary tests (2,000 generated cases). Verification: typecheck + lint clean; 122/122 tests green; authenticated HTTP smoke returned 200. Browser automation could not run because no Chromium executable is installed in this sandbox. Active branch: `feat/admin-order-operations`. Referral awarding remains deferred and must be implemented idempotently in a separate step.
