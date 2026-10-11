@@ -166,3 +166,83 @@ export const auditLog = sqliteTable('audit_log', {
 
 export type StoreRow = typeof stores.$inferSelect;
 export type IngredientRow = typeof ingredients.$inferSelect;
+
+/* ------------------------------------------------------------------ */
+/* Orders (ADR-011/012/027) — money frozen at placement, two machines  */
+/* ------------------------------------------------------------------ */
+
+export const orders = sqliteTable(
+  'orders',
+  {
+    id: text('id').primaryKey(), // od_…
+    storeId: text('store_id')
+      .notNull()
+      .references(() => stores.id),
+    /** Nullable until the auth slice; contact block below keeps the order shippable. */
+    userId: text('user_id').references(() => users.id),
+    /** LAB (custom mix) | PREMADE (fixed blend). Closed set, CHECK-enforced. */
+    kind: text('kind').notNull(),
+    productId: text('product_id').references(() => products.id), // PREMADE only
+    packSizeG: integer('pack_size_g').notNull(),
+    packageCount: integer('package_count').notNull().default(1),
+    customerName: text('customer_name').notNull(),
+    customerPhone: text('customer_phone').notNull(),
+    addressLine: text('address_line').notNull(),
+    city: text('city').notNull(),
+    pincode: text('pincode').notNull(),
+    /** COD | UPI_QR — closed set (ADR-010: no gateway, ever). */
+    paymentMethod: text('payment_method').notNull(),
+    paymentStatus: text('payment_status').notNull().default('UNPAID'),
+    fulfillmentStatus: text('fulfillment_status').notNull().default('PLACED'),
+    /** Frozen OrderSnapshot JSON (ADR-027 rule 1): lines + every paisa. */
+    itemsSnapshot: text('items_snapshot').notNull(),
+    rawPaise: integer('raw_paise').notNull(),
+    millingPaise: integer('milling_paise').notNull(),
+    packagingPaise: integer('packaging_paise').notNull(),
+    subtotalPaise: integer('subtotal_paise').notNull(), // GST-inclusive
+    gstRateBps: integer('gst_rate_bps').notNull(),
+    gstPaise: integer('gst_paise').notNull(),
+    cgstPaise: integer('cgst_paise').notNull(),
+    sgstPaise: integer('sgst_paise').notNull(),
+    deliveryFeePaise: integer('delivery_fee_paise').notNull(), // quoted
+    deliveryPaise: integer('delivery_paise').notNull(), // charged (0 when waived)
+    deliveryWaived: integer('delivery_waived', { mode: 'boolean' }).notNull().default(false),
+    totalPaise: integer('total_paise').notNull(),
+    ratesProvisional: integer('rates_provisional', { mode: 'boolean' }).notNull().default(false),
+    /** LAB only: frozen nutrition provenance (ADR-007). */
+    nutritionSourcesJson: text('nutrition_sources_json'),
+    referralCodeUsed: text('referral_code_used'),
+    placedAt: integer('placed_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    check('orders_kind_valid', sql`${t.kind} IN ('LAB', 'PREMADE')`),
+    check('orders_payment_method_valid', sql`${t.paymentMethod} IN ('COD', 'UPI_QR')`),
+    check('orders_package_count_positive', sql`${t.packageCount} >= 1`),
+  ],
+);
+
+/** Per-order operational timeline, exportable as a list (ADR-027 rule 8).
+ *  actorUserId NULL = customer self-service (e.g. "I have paid" attestation). */
+export const orderEvents = sqliteTable('order_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  orderId: text('order_id')
+    .notNull()
+    .references(() => orders.id, { onDelete: 'cascade' }),
+  actorUserId: text('actor_user_id'),
+  /** CREATED | FULFILLMENT | PAYMENT | CREDIT_REFUND | NOTE */
+  action: text('action').notNull(),
+  fromStatus: text('from_status'),
+  toStatus: text('to_status'),
+  note: text('note'),
+  at: integer('at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
+});
+
+export type OrderRow = typeof orders.$inferSelect;
+export type OrderEventRow = typeof orderEvents.$inferSelect;

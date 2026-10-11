@@ -8,6 +8,13 @@
       "when": 1791668906839,
       "tag": "0000_black_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791708197882,
+      "tag": "0001_talented_master_chief",
+      "breakpoints": true
     }
   ]
 }

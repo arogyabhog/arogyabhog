@@ -697,3 +697,58 @@ Vitality-anchor rows) form the client's guided first-review list.
 **Consequences:** BLOCKER-1 downgrades from "client data-entry dependency" to
 "client review of provisional seeds". No derived rate ever ships unflagged; the
 client's hand-set rates remain the only non-provisional source.
+
+## ADR-027 · 2026-10-12 · Orders are two state machines over a frozen money snapshot
+
+**Status:** ✅ RESOLVED (implements ADR-011/012/015/017 hook points)
+
+**Problem:** Checkout needs order lifecycle, COD + providerless UPI-QR payment
+tracking, delivery-credit redemption, and an exportable audit trail — with no
+auth layer yet, and money that must never drift after placement (rates are
+admin-editable per ADR-008/026).
+
+**Decision:**
+1. **Frozen snapshot.** At creation, all money is computed once (Lab orders via
+   the verified mix engine; premade via `variant.sellPaise`, which is already
+   the all-inclusive GST-inclusive shelf price → milling/packaging = 0) and
+   stored in `orders.items_snapshot` + money columns. Later rate edits never
+   touch placed orders.
+2. **Fulfilment machine** (closed union, transition table in
+   `src/domain/order-engine.ts`): PLACED→{PREPARING,CANCELLED};
+   PREPARING→{PREPARED,CANCELLED}; PREPARED→SHIPPED;
+   SHIPPED→{DELIVERED,DELIVERY_FAILED}; DELIVERY_FAILED→{SHIPPED,RTO};
+   DELIVERED→CLOSED; RTO→CLOSED; CLOSED and CANCELLED terminal and immutable.
+   Cancellation window is therefore exactly PLACED/PREPARING (spec: pre-PREPARED).
+3. **Payment machine:** UNPAID→{AWAITING_VERIFICATION,PAID};
+   AWAITING_VERIFICATION→{PAID,UNPAID} (admin rejects an unverifiable UPI
+   claim → back to UNPAID, never a refund object — no-refund scope stands);
+   PAID terminal. COD confirms at delivery with the driver; UPI_QR is
+   customer-attested ("I have paid") then admin-reconciled against the bank
+   statement. No gateway, no webhook — there is no provider to call.
+4. **Cross-machine rule:** DELIVERED→CLOSED requires paymentStatus=PAID
+   (CLOSED is the immutable archive; we never archive money ambiguity).
+   RTO→CLOSED does NOT require PAID (goods came back; COD never moved money;
+   any prepaid UPI+RTO case gets a mandatory event note for manual policy).
+5. **Delivery credits (ADR-017 economics):** redemption is opt-in at creation,
+   consumes exactly one credit, waives the ₹50 fee (snapshot keeps
+   `deliveryFeePaise` quoted AND `deliveryPaise` charged). Cancellation
+   refunds the credit. Referral *awarding* (referee bonus, referrer +1 on
+   first DELIVERED, cap 10) stays in its own slice — the DELIVERED transition
+   is the documented hook point.
+6. **Premade invoice honesty:** a premade snapshot carries ONE money line
+   (the pouch at its shelf price, 100.00%). We refuse to pro-rate per-ingredient
+   prices for a fixed-price blend — that would fabricate numbers the client
+   never set. Exact composition % lives on the PDP, not in fake price lines.
+7. **GST on premade** is re-derived from the inclusive price with the engine's
+   own formula (`roundHalfUp(sub×bps, 10000+bps)`, CGST floor-half, SGST
+   remainder) so every invoice shows the statutory split, HSN 11010000.
+8. **Audit:** every create/transition/payment change appends to `order_events`
+   (actor nullable = customer self-service), exportable as a list (ADR-015).
+9. **No API routes in this slice.** Unauthenticated order/admin endpoints would
+   violate ADR-014 (server-side RBAC) worse than no endpoints. The service
+   takes explicit `actorId`; routes land with the auth slice.
+
+**Consequences:** orders + order_events tables and migration 0001; domain
+module with full transition-matrix tests; `OrderError` closed union mirroring
+`MixErrorCode` discipline. Checkout UI and admin console consume this service
+once auth exists.
