@@ -1,4 +1,4 @@
-import { register } from '@/app/login/actions';
+import { register } from '@/app/(storefront)/login/actions';
 
 export const metadata = { title: 'Create account · ArogyaBhog' };
 

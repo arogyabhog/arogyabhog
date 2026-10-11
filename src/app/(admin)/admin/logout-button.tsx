@@ -1,6 +1,6 @@
 'use client';
 
-import { logout } from '@/app/login/actions';
+import { logout } from '@/app/(storefront)/login/actions';
 
 export function LogoutButton() {
   return (

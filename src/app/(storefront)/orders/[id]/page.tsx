@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import QRCode from 'qrcode';
-import { attestPayment } from '@/app/orders/actions';
+import { attestPayment } from '@/app/(storefront)/orders/actions';
 import { CartClearer } from '@/components/CartClearer';
 import { db } from '@/db/client';
 import { orderEvents, orders, products, stores } from '@/db/schema';

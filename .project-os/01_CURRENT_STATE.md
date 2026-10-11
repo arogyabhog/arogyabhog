@@ -1,6 +1,6 @@
 # 01 — CURRENT STATE
 
-**Phase:** 3 — VERTICAL SLICE (customer storefront/checkout implemented; admin order operations underway)
+**Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
 **Last updated:** 2026-10-11
 **Git SHA:** see `git log`
 **Active branch:** `feat/admin-order-operations`
@@ -24,7 +24,7 @@
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | ✅ Storefront, product pages, Lab, customer accounts, checkout, admin auth/audit, and admin order queue implemented; server-side action flow verified by state-machine and scope tests |
+| UI layer | ✅ Customer storefront/checkout implemented; admin auth, audit, and order queue exist. Admin shell separated; product/ingredient/settings management and operational dashboard still pending |
 
 ---
 
@@ -85,10 +85,11 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Wire referral credit awards idempotently to the referee's first DELIVERED order.
-2. Add owner tools for provisional ingredient-rate review, price consistency, and store/product settings.
+1. Finish admin panel in sequence: actionable overview, individual product/variant/recipe editor, ingredient/rate editor + price-consistency check, store settings, then audit/order polish.
+2. Implement referral awarding only after the core admin CRUD, with idempotency and first-delivered-order tests.
 3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
 4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end order/operations checks.
+5. Scope inventory, coupons, staff management, and reports only after their data models and workflows are confirmed.
 
 ## DELIBERATELY DEFERRED
 
@@ -139,4 +140,6 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 
 16. **2026-10-13 — Checkout slice (ADR-032).** Customer register/login (referral code → referredByCode + 2 free-delivery credits; safe `next` bounce for guests), localStorage basket (`ab_cart_v1`) with header CartButton + PDP add-to-cart, `/checkout` (per-line `createPremadeOrder`, contact validation, COD/UPI choice, CartClearer on `?placed=1`), `/orders` + `/orders/[id]` (owner/staff RBAC, receipt, timeline, providerless UPI QR `upi://pay?...` from `stores.upiVpa` (migration 0004), attest → AWAITING_VERIFICATION). Browser flow 8/8 PASS (scripts/checkout-flow.mjs): register→cart→COD order→UPI order→QR→attest→list. Gates: tsc, 119/119, lint 0 warnings, build clean.
 
-17. **2026-10-11 — Admin order operations slice.** Added `/admin/orders` queue (latest 50; ADMIN global, MANAGER filtered to assigned store) with shipping/contact/order snapshot, fulfilment transitions, and payment confirm/reject controls. Server actions re-read the session, validate inputs with Zod, check per-order store authorization, then call existing transition service (which enforces legal state changes and appends order timeline + audit records). Added property-based RBAC boundary tests (2,000 generated cases). Verification: typecheck + lint clean; 122/122 tests green; authenticated HTTP smoke returned 200. Browser automation could not run because no Chromium executable is installed in this sandbox. Active branch: `feat/admin-order-operations`. Referral awarding remains deferred and must be implemented idempotently in a separate step.
+17. **2026-10-11 — Admin order operations slice.** Added `/admin/orders` queue (latest 50; ADMIN global, MANAGER filtered to assigned store) with shipping/contact/order snapshot, fulfilment transitions, and payment confirm/reject controls. Server actions re-read the session, validate inputs with Zod, check per-order store authorization, then call existing transition service (which enforces legal state changes and appends order timeline + audit records). Added property-based RBAC boundary tests (2,000 generated cases). Verification: typecheck + lint clean; 122/122 tests green; authenticated HTTP smoke returned 200. Browser automation could not run because no Chromium executable is installed in this sandbox. Referral awarding remains deferred and must be implemented idempotently in a separate step.
+
+18. **2026-10-11 — Admin shell separation.** Moved consumer-facing routes into the `(storefront)` route group and admin routes into `(admin)` without changing public URLs. The root layout now owns only document/fonts; storefront nav/cart/footer render only under storefront, while admin receives a separate forest header, staff identity, and admin navigation. Verified production build and existing 122 tests; authenticated `/admin` returned 200 with zero Shop/Lab/Our promise/cart links; storefront `/` remained 200. Admin dashboard and CRUD pages remain the next sequence steps. Active branch: `feat/admin-order-operations`.
