@@ -182,6 +182,23 @@ describe('mix service over a migrated + seeded database', () => {
     expect(calc.mix.nutrition.sources).toContain('IFCT2017');
   });
 
+  it('USDA fallback unblocks pumpkin too (FDC 170556)', async () => {
+    const calc = await calculateMixFromDb(
+      db,
+      req({
+        items: [
+          { ingredientId: 'RM-001', weightG: 8500 },
+          { ingredientId: 'RM-016', weightG: 1500 },
+        ],
+      }),
+    );
+    expect(calc.nutritionSources['RM-016']?.enerc).toBe('USDA');
+    const enerc = calc.mix.nutrition.per100g.find((n) => n.code === 'enerc');
+    // pumpkin 559 kcal/100 g at 15% lifts the blend above wheat-only (~320)
+    expect(enerc!.valueScaled).toBeGreaterThan(35000);
+    expect(enerc!.valueScaled).toBeLessThan(37000);
+  });
+
   it('an unknown store is refused', async () => {
     await expect(calculateMixFromDb(db, req({ storeId: 'st_nowhere' }))).rejects.toMatchObject({
       code: 'STORE_NOT_FOUND',

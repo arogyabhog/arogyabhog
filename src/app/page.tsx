@@ -1,67 +1,16 @@
-import { eq } from 'drizzle-orm';
-import { type IngProp, LabClient, type PreMadeProp } from '@/components/LabClient';
-import { db } from '@/db/client';
-import { ingredientNutrition, ingredients, productRecipeLines, products, productVariants } from '@/db/schema';
-import { SEED_STORE_ID } from '@/db/seed';
-
-const PACK_IMG: Record<string, string> = {
-  'everyday-atta': '/img/pack-everyday.png',
-  'sugar-care-atta': '/img/pack-sugar-care.png',
-  'thyro-care-atta': '/img/pack-thyro-care.png',
-  'high-protein-atta': '/img/pack-high-protein.png',
-  'vitality-atta': '/img/pack-vitality.png',
-};
+import { getStorefront } from '@/server/storefront-data';
 
 export const dynamic = 'force-dynamic';
 
+const FEATURED = ['everyday-atta', 'sugar-care-atta', 'high-protein-atta'];
+
 export default async function Home() {
-  const ings = await db
-    .select({
-      id: ingredients.id,
-      name: ingredients.name,
-      category: ingredients.category,
-      isBaseGrain: ingredients.isBaseGrain,
-      maxPctBps: ingredients.maxPctBps,
-    })
-    .from(ingredients)
-    .where(eq(ingredients.storeId, SEED_STORE_ID));
-
-  const withNutrition = new Set(
-    (await db.selectDistinct({ id: ingredientNutrition.ingredientId }).from(ingredientNutrition)).map((r) => r.id),
-  );
-
-  const prods = await db.select().from(products).where(eq(products.storeId, SEED_STORE_ID));
-  const variants = await db.select().from(productVariants);
-  const lines = await db.select().from(productRecipeLines);
-
-  const ingProps: IngProp[] = ings.map((i) => ({ ...i, hasNutrition: withNutrition.has(i.id) }));
-
-  const preMades: PreMadeProp[] = prods.map((p) => {
-    const v = variants.find((x) => x.productId === p.id && x.packSizeG === 10000);
-    const pls = lines.filter((l) => l.productId === p.id);
-    const named = pls
-      .map((l) => ({
-        name: ings.find((i) => i.id === l.ingredientId)?.name ?? l.ingredientId,
-        bps: l.ratioBps,
-        id: l.ingredientId,
-      }))
-      .sort((a, b) => b.bps - a.bps);
-    return {
-      name: p.name,
-      slug: p.slug,
-      img: PACK_IMG[p.slug] ?? '/brand/logo-mark.png',
-      sellPaise: v?.sellPaise ?? 0,
-      provisional: Boolean(v?.provisional),
-      lines: named.map((n) => ({ name: n.name, bps: n.bps })),
-      template: named.map((n) => ({ id: n.id, g: n.bps })), // bps == grams at 10 kg
-    };
-  });
-
-  const everyday = preMades.find((p) => p.slug === 'everyday-atta');
+  const { preMades } = await getStorefront();
+  const featured = FEATURED.map((s) => preMades.find((p) => p.slug === s)).filter((p) => p !== undefined);
 
   return (
     <main>
-      {/* HERO — one forest-free, ivory-first statement; the jewel gradient stays in the logo */}
+      {/* HERO */}
       <section className="relative overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -85,34 +34,73 @@ export default async function Home() {
             </p>
             <div className="mt-8 flex gap-3">
               <a
-                href="#lab"
+                href="/lab"
                 className="rounded-ctrl bg-ink-900 px-6 py-3 text-sm font-bold text-gold-300 shadow-warm hover:bg-ink-800"
               >
                 Build my atta
               </a>
               <a
-                href="#premade"
+                href="/shop"
                 className="rounded-ctrl border border-gold-500 px-6 py-3 text-sm font-bold text-gold-700 hover:bg-gold-100"
               >
-                View premade mixes
+                Shop the blends
               </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* PREMADE — exact % disclosure on every card (research L1) */}
-      <section id="premade" className="mx-auto max-w-6xl px-5 pt-20">
-        <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">The house blends</div>
-        <h2 className="mt-2 font-display text-3xl font-semibold text-ink-900">
-          Premade, and proud of their percentages
-        </h2>
+      {/* PROMISE STRIP */}
+      <section id="promise" className="border-y border-ivory-300 bg-ivory-100">
+        <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:grid-cols-3">
+          <div>
+            <div className="text-sm font-extrabold text-ink-900">Our own drivers</div>
+            <p className="mt-1 text-[13px] leading-6 text-ink-500">
+              No courier roulette. Fresh packs travel in our bags, with people we employ.
+            </p>
+          </div>
+          <div>
+            <div className="text-sm font-extrabold text-ink-900">COD &amp; UPI QR — no middleman</div>
+            <p className="mt-1 text-[13px] leading-6 text-ink-500">
+              Pay cash on delivery or scan our QR. Your money reaches us directly, never a gateway.
+            </p>
+          </div>
+          <div>
+            <div className="text-sm font-extrabold text-ink-900">The receipt is the recipe</div>
+            <p className="mt-1 text-[13px] leading-6 text-ink-500">
+              Exact percentages, every fee on its own line, GST split shown. Estimated nutrition, labelled so.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURED BLENDS */}
+      <section className="mx-auto max-w-6xl px-5 pt-16">
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">The house blends</div>
+            <h2 className="mt-2 font-display text-3xl font-semibold text-ink-900">
+              Premade, and proud of their percentages
+            </h2>
+          </div>
+          <a href="/shop" className="text-sm font-bold text-gold-700 hover:underline">
+            All five →
+          </a>
+        </div>
         <div className="gold-rule mt-4 mb-8" />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {preMades.map((p) => (
-            <article key={p.slug} className="overflow-hidden rounded-card border border-ivory-300 bg-white shadow-warm">
+          {featured.map((p) => (
+            <a
+              key={p.slug}
+              href={`/shop/${p.slug}`}
+              className="group overflow-hidden rounded-card border border-ivory-300 bg-white shadow-warm"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.img} alt={p.name} className="aspect-[4/3] w-full object-cover" />
+              <img
+                src={p.img}
+                alt={p.name}
+                className="aspect-[4/3] w-full object-cover transition group-hover:scale-[1.02]"
+              />
               <div className="p-5">
                 <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-gold-600">Premade · 10 kg</div>
                 <h3 className="mt-1 font-display text-xl font-semibold text-ink-900">{p.name}</h3>
@@ -136,18 +124,34 @@ export default async function Home() {
                   )}
                 </div>
               </div>
-            </article>
+            </a>
           ))}
         </div>
       </section>
 
-      <LabClient
-        storeId={SEED_STORE_ID}
-        packs={[5000, 10000, 15000, 20000]}
-        ingredients={ingProps}
-        preMades={preMades}
-        template={everyday?.template ?? []}
-      />
+      {/* THE LAB CTA — the one deliberate forest-green moment (ADR-025) */}
+      <section className="mx-auto mt-20 max-w-6xl px-5">
+        <div className="overflow-hidden rounded-card bg-forest-900 px-8 py-12 sm:px-12">
+          <div className="flex flex-wrap items-center gap-8">
+            <div className="min-w-[280px] flex-1">
+              <div className="text-xs font-bold uppercase tracking-[0.14em] text-forest-100/70">The Lab</div>
+              <h2 className="mt-2 font-display text-3xl font-semibold text-gold-200">
+                Don&rsquo;t like our recipe? Write your own.
+              </h2>
+              <p className="mt-3 max-w-lg text-[15px] leading-7 text-forest-100/85">
+                Eighteen ingredients, your grams, our guardrails. Watch the price build rupee by rupee and the nutrition
+                table fill in as you slide — then order exactly that.
+              </p>
+            </div>
+            <a
+              href="/lab"
+              className="rounded-ctrl bg-gold-300 px-8 py-4 text-sm font-extrabold text-forest-950 shadow-warm hover:bg-gold-200"
+            >
+              Open the Lab →
+            </a>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

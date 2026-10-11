@@ -6,10 +6,12 @@
  *   - usda-fallback-nutrients.json   (ADR-007 fallback for IFCT gaps)
  *   - seed-premade-recipes.json      (blend compositions in bps)
  *
- * Ingredients with no profile in EITHER source (psyllium, pumpkin — USDA API
- * quota pending, mirrors disagree) are inserted WITHOUT nutrition rows on
- * purpose: the engine hard-fails (INCOMPLETE_INGREDIENT_DATA) if they enter a
- * mix, and the Lab renders them as "nutrition pending".
+ * Ingredients with no profile in EITHER source stay unmixable on purpose.
+ * As of 2026-10-12 only psyllium (RM-011) remains: USDA has Branded entries
+ * only, best coverage 7/12 nutrients (and corrupt iron µg/mg labelling) —
+ * ADR-007 forbids partial or mirror-seeded data, so the engine hard-fails
+ * (INCOMPLETE_INGREDIENT_DATA) and the Lab shows "nutrition pending".
+ * Pumpkin resolved via FDC 170556 (SR Legacy, 12/12, kJ→kcal patched).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -42,6 +44,7 @@ const NUTRIENT_PROFILE: Record<string, string> = {
   'RM-013': 'Green gram dal (Moong)',
   'RM-014': 'Chia Seeds', // USDA fallback
   'RM-015': 'Gingelly/Sesame white (Til)',
+  'RM-016': 'Pumpkin Seeds (Kaddu Beej)', // USDA fallback
   'RM-017': 'Sunflower seeds',
   'RM-018': 'Fenugreek seeds (Methi)',
 };

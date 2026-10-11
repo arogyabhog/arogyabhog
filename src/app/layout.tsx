@@ -24,13 +24,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="font-display text-xl font-semibold tracking-tight text-ink-900">ArogyaBhog</span>
             </a>
             <nav className="ml-auto flex items-center gap-5 text-sm font-semibold text-ink-500">
-              <a href="#premade" className="hover:text-gold-700">
+              <a href="/shop" className="hover:text-gold-700">
                 Shop
               </a>
-              <a href="#lab" className="hover:text-gold-700">
+              <a href="/lab" className="hover:text-gold-700">
                 The Lab
               </a>
-              <a href="#promise" className="hidden hover:text-gold-700 sm:block">
+              <a href="/#promise" className="hidden hover:text-gold-700 sm:block">
                 Our promise
               </a>
               <span className="rounded-ctrl border border-gold-400 px-3 py-1.5 text-gold-700">Cart · 0</span>

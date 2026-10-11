@@ -94,8 +94,10 @@ export function LabClient(props: {
   ingredients: IngProp[];
   preMades: PreMadeProp[];
   template: Array<{ id: string; g: number }>;
+  templateSlug?: string;
 }) {
-  const { storeId, packs, ingredients, template } = props;
+  const { storeId, packs, ingredients, preMades, template } = props;
+  const [activeSlug, setActiveSlug] = useState<string | undefined>(props.templateSlug);
   const [grams, setGrams] = useState<Record<string, number>>(() =>
     Object.fromEntries(template.map((t) => [t.id, t.g])),
   );
@@ -163,7 +165,7 @@ export function LabClient(props: {
   };
 
   return (
-    <section id="lab" className="mx-auto max-w-6xl px-5 pt-24">
+    <section id="lab" className="mx-auto max-w-6xl px-5 pt-12">
       <div className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">The Lab</div>
       <h2 className="mt-2 font-display text-3xl font-semibold text-ink-900">Compose your own atta</h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-7 text-ink-500">
@@ -199,6 +201,32 @@ export function LabClient(props: {
                 Snap to pack
               </button>
             )}
+          </div>
+
+          {/* Start-from-a-blend (research lesson L2: the Lab opens from premade templates) */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-400">Start from a blend</span>
+            {preMades.map((p) => {
+              const short = p.name.replace('ArogyaBhog ', '').replace(' Atta', '');
+              return (
+                <button
+                  key={p.slug}
+                  type="button"
+                  onClick={() => {
+                    setPack(10000);
+                    setGrams(Object.fromEntries(p.template.map((t) => [t.id, t.g])));
+                    setActiveSlug(p.slug);
+                  }}
+                  className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                    activeSlug === p.slug
+                      ? 'border-gold-500 bg-gold-100 text-gold-700'
+                      : 'border-ivory-300 text-ink-500 hover:border-gold-400'
+                  }`}
+                >
+                  {short}
+                </button>
+              );
+            })}
           </div>
 
           <div className="mt-4 space-y-3">
