@@ -3,7 +3,7 @@
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
 **Last updated:** 2026-10-11
 **Git SHA:** see `git log`
-**Active branch:** `feat/admin-dashboard`
+**Active branch:** `feat/admin-catalog`
 
 ---
 
@@ -20,11 +20,11 @@
 | Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
 | Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0004; living design doc remains reviewable |
 | API / server boundaries | ✅ Mix calculation API, Zod validation, and authenticated checkout/order server actions implemented |
-| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 122 project tests currently green |
+| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 128 project tests currently green |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | ✅ Customer storefront/checkout implemented; admin shell separated and operational dashboard now shows scoped order/payment worklists. Product/ingredient/settings management and remaining admin modules are pending |
+| UI layer | ✅ Customer storefront/checkout; separate admin shell, actionable dashboard, order queue, and per-item product editor (details, variants, premade ratios). Ingredient pricing, consistency checker, settings, and remaining admin modules are pending |
 
 ---
 
@@ -85,11 +85,10 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Build per-item product/variant/recipe editing.
-2. Build ingredient rate review + price-consistency checker, then store settings.
-3. Add missing schema and interfaces for inventory, coupons, referrals, staff, and reports in separate feature branches, validating each against ADRs and actual requirements.
-4. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
-5. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks.
+1. Build ingredient rate review + price-consistency checker, then store settings.
+2. Add missing schema and interfaces for inventory, coupons, referrals, staff, and reports in separate feature branches, validating each against ADRs and actual requirements.
+3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
+4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks.
 
 ## DELIBERATELY DEFERRED
 
@@ -145,3 +144,5 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 18. **2026-10-11 — Admin shell separation.** Moved consumer-facing routes into the `(storefront)` route group and admin routes into `(admin)` without changing public URLs. The root layout now owns only document/fonts; storefront nav/cart/footer render only under storefront, while admin receives a separate forest header, staff identity, and admin navigation. Verified production build and existing 122 tests; authenticated `/admin` returned 200 with zero Shop/Lab/Our promise/cart links; storefront `/` remained 200. Admin dashboard and CRUD pages remain the next sequence steps. Branch: `feat/admin-order-operations`.
 
 19. **2026-10-11 — Admin dashboard.** Replaced KPI-only cards with active-order and UPI-review counts linked to the order desk, a concrete list of awaiting UPI claims, latest eight order rows, and a direct audit-log action. Manager queries are store-scoped server-side (including the null-store case returns no orders). Verified: typecheck, lint, 122 tests, production build, and authenticated `/admin` HTTP 200 with the new worklists. Branch: `feat/admin-dashboard`.
+
+20. **2026-10-11 — Admin catalog editor.** Added `/admin/products` list and `/admin/products/[id]` editor for every seeded SKU: product name/description/status; each pack's independent cost/sell price and visibility; and existing premade ingredient ratios with exact 10,000-bps validation. Slugs stay fixed and recipe membership cannot be silently changed. All writes are staff/store-scoped and append before/after audit rows; price input is parsed from decimal text to integer paise. Storefront listing/PDP queries now hide inactive products/variants, and order creation refuses inactive SKUs. Verification: typecheck, lint, 128 tests, production build, authenticated HTTP 200 for catalog/list/detail. No new database migration; see ADR-033. Branch: `feat/admin-catalog`.

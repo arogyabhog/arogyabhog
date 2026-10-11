@@ -353,3 +353,16 @@ client-set one:
 Seed data: `discovery/seed-ingredient-rates.json` (18 rows, paise, provenance
 per row). CHECK constraint: `sell_paise_per_kg > 0 AND cost_paise_per_kg > 0`
 (R1.3 — a zero rate must be impossible to store, not merely refused by the API).
+
+## Implementation alignment note — 2026-10-11 (admin catalog)
+
+The current Drizzle schema is a narrower v1 than the full target schema above.
+Implemented catalog fields are `products(name, slug, kind, description, status)`,
+`product_variants(product_id, pack_size_g, cost_paise, sell_paise, sell_source,
+provisional, active)`, `product_recipe_lines(product_id, ingredient_id, ratio_bps)`,
+and `ingredients` with current rates/provenance. Admin catalog edits these
+existing records and audits every mutation. Slugs are fixed in the editor; recipe
+ratio updates preserve the existing ingredient membership and require exactly
+10,000 bps. Fields planned above but absent in the app schema—image URL, SEO,
+best-seller flag, SKU, stock, separate historical ingredient-price rows—must be
+introduced by explicit migration before an admin UI can edit them.

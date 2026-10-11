@@ -207,13 +207,19 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
   const product = await db
     .select()
     .from(products)
-    .where(and(eq(products.id, input.productId), eq(products.storeId, input.storeId)))
+    .where(and(eq(products.id, input.productId), eq(products.storeId, input.storeId), eq(products.status, 'active')))
     .get();
   const variant = product
     ? await db
         .select()
         .from(productVariants)
-        .where(and(eq(productVariants.productId, product.id), eq(productVariants.packSizeG, input.packSizeG)))
+        .where(
+          and(
+            eq(productVariants.productId, product.id),
+            eq(productVariants.packSizeG, input.packSizeG),
+            eq(productVariants.active, true),
+          ),
+        )
         .get()
     : undefined;
   if (!product || !variant) {

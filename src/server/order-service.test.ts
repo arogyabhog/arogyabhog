@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { auditLog, users } from '../db/schema';
+import { auditLog, products, productVariants, users } from '../db/schema';
 import { SEED_STORE_ID, seedDatabase } from '../db/seed';
 import { OrderError } from '../domain/order-engine';
 import {
@@ -264,7 +264,7 @@ describe('premade orders', () => {
     expect(snap.composition.reduce((a, c) => a + c.bps, 0)).toBe(10000); // exact-% still travels with the order
   });
 
-  it('scales by package count and refuses nonsense', async () => {
+  it('scales by package count and refuses invalid variants or tenancy', async () => {
     const two = await createPremadeOrder(db, premadeInput({ packageCount: 2 }));
     expect(two.snapshot.rawPaise).toBe(190000);
     expect(two.totalPaise).toBe(195000);
@@ -273,5 +273,21 @@ describe('premade orders', () => {
     expect(await codeOf(createPremadeOrder(db, premadeInput({ productId: 'pr_nope' })))).toBe('VARIANT_NOT_FOUND');
     // tenancy: a valid product id under the WRONG store is simply "not found"
     expect(await codeOf(createPremadeOrder(db, premadeInput({ storeId: 'st_other' })))).toBe('VARIANT_NOT_FOUND');
+  });
+
+  it('refuses checkout of a deactivated product or pack variant', async () => {
+    await db.update(products).set({ status: 'inactive' }).where(eq(products.id, 'pr_everyday'));
+    try {
+      expect(await codeOf(createPremadeOrder(db, premadeInput()))).toBe('VARIANT_NOT_FOUND');
+    } finally {
+      await db.update(products).set({ status: 'active' }).where(eq(products.id, 'pr_everyday'));
+    }
+
+    await db.update(productVariants).set({ active: false }).where(eq(productVariants.productId, 'pr_everyday'));
+    try {
+      expect(await codeOf(createPremadeOrder(db, premadeInput()))).toBe('VARIANT_NOT_FOUND');
+    } finally {
+      await db.update(productVariants).set({ active: true }).where(eq(productVariants.productId, 'pr_everyday'));
+    }
   });
 });

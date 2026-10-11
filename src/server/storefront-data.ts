@@ -3,7 +3,7 @@
  * database through here — no page owns private data logic, so renaming or
  * re-pricing (ADR-020/026) never means touching components.
  */
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { IngProp, PreMadeProp } from '@/components/LabClient';
 import { db } from '@/db/client';
 import { ingredientNutrition, ingredients, productRecipeLines, products, productVariants } from '@/db/schema';
@@ -44,11 +44,15 @@ export async function getStorefront(): Promise<{
     (await db.selectDistinct({ id: ingredientNutrition.ingredientId }).from(ingredientNutrition)).map((r) => r.id),
   );
 
-  const prods = await db.select().from(products).where(eq(products.storeId, SEED_STORE_ID));
-  const variants = await db.select().from(productVariants);
+  const prods = await db
+    .select()
+    .from(products)
+    .where(and(eq(products.storeId, SEED_STORE_ID), eq(products.status, 'active')));
+  const variants = await db.select().from(productVariants).where(eq(productVariants.active, true));
   const lines = await db.select().from(productRecipeLines);
 
-  const preMades: PreMadeProp[] = prods.map((p) => {
+  const visibleProducts = prods.filter((product) => variants.some((variant) => variant.productId === product.id));
+  const preMades: PreMadeProp[] = visibleProducts.map((p) => {
     const v = variants.find((x) => x.productId === p.id && x.packSizeG === 10000);
     const named = lines
       .filter((l) => l.productId === p.id)
