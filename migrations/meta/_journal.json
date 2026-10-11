@@ -15,6 +15,13 @@
       "when": 1791708197882,
       "tag": "0001_talented_master_chief",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791714979101,
+      "tag": "0002_abnormal_morbius",
+      "breakpoints": true
     }
   ]
 }

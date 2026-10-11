@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { PackPicker } from '@/components/PackPicker';
 import { formatAmount, NUTRIENT_GROUP_ORDER } from '@/domain/nutrition-blend';
 import { getPreMadeDetail } from '@/server/storefront-data';
 
@@ -79,18 +80,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               Premade · 10 kg pouch
             </div>
             <h1 className="font-display text-3xl font-semibold leading-tight text-ink-900 sm:text-4xl">{p.name}</h1>
-            <p className="text-base leading-7 text-ink-700">{COPY[p.slug] ?? ''}</p>
+            <p className="text-base leading-7 text-ink-700">{COPY[p.slug] ?? p.desc ?? ''}</p>
           </div>
 
-          <div className="space-y-1 border-y border-ivory-300 py-5">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="tnum font-display text-3xl font-bold text-ink-900">
-                ₹{(p.sellPaise / 100).toLocaleString('en-IN')}
-              </span>
-              <span className="text-sm text-ink-500">
-                GST-inclusive · ₹{(p.sellPaise / 10 / 100).toLocaleString('en-IN')}/kg
-              </span>
-            </div>
+          <div className="space-y-3 border-y border-ivory-300 py-5">
+            <PackPicker packs={p.packs} />
             {p.provisional && (
               <span className="inline-block rounded-full bg-warn-soft px-2.5 py-1 text-[10px] font-bold text-warn">
                 indicative pricing — client review pending
@@ -106,10 +100,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               Order · COD / UPI QR
             </button>
             <a
-              href={`/lab?template=${p.slug}`}
+              href="/lab"
               className="rounded-ctrl border border-forest-600 px-6 py-3 text-sm font-bold text-forest-700 transition hover:bg-forest-50"
             >
-              Tweak this recipe in the Lab →
+              {p.kind === 'premade' ? 'Make your own mix in the Lab →' : 'Build a custom mix in the Lab →'}
             </a>
           </div>
           <p className="text-xs text-ink-500">Checkout opens in the next release — the button is honest about that.</p>
@@ -146,7 +140,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <div className="overflow-hidden rounded-card border border-ivory-300 bg-white shadow-warm">
             <div className="bg-forest-900 px-6 py-3.5 text-[11px] font-bold uppercase tracking-[0.12em] text-gold-200">
-              Exact composition · per 10 kg
+              Exact composition · per 1 kg
             </div>
             <div className="overflow-x-auto p-6">
               <table className="w-full min-w-[320px] text-sm">
@@ -155,13 +149,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     <tr key={l.name} className="border-b border-ivory-200">
                       <td className="py-2.5 pr-2 text-ink-700">{l.name}</td>
                       <td className="tnum py-2.5 text-right font-bold text-ink-900">{(l.bps / 100).toFixed(2)}%</td>
-                      <td className="tnum py-2.5 pl-4 text-right text-ink-500">{l.bps.toLocaleString('en-IN')} g</td>
+                      <td className="tnum py-2.5 pl-4 text-right text-ink-500">
+                        {(l.bps / 10).toLocaleString('en-IN')} g
+                      </td>
                     </tr>
                   ))}
                   <tr>
                     <td className="py-3 font-bold text-ink-900">Total</td>
                     <td className="tnum py-3 text-right font-bold text-ink-900">100.00%</td>
-                    <td className="tnum py-3 pl-4 text-right font-bold text-ink-900">10,000 g</td>
+                    <td className="tnum py-3 pl-4 text-right font-bold text-ink-900">1,000 g</td>
                   </tr>
                 </tbody>
               </table>
@@ -183,7 +179,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   <tr className="border-b border-ivory-300 text-[11px] uppercase tracking-wide text-ink-500">
                     <th className="pb-2.5 text-left font-bold">Nutrient</th>
                     <th className="tnum pb-2.5 text-right font-bold">Per 100 g</th>
-                    <th className="tnum pb-2.5 pl-4 text-right font-bold">Per 10 kg pack</th>
+                    <th className="tnum pb-2.5 pl-4 text-right font-bold">Per 1 kg</th>
                   </tr>
                 </thead>
                 <tbody>

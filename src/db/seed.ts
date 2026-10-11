@@ -6,11 +6,11 @@
  *   - usda-fallback-nutrients.json   (ADR-007 fallback for IFCT gaps)
  *   - seed-premade-recipes.json      (blend compositions in bps)
  *
- * Ingredients with no profile in EITHER source stay unmixable on purpose.
- * As of 2026-10-12 only psyllium (RM-011) remains: USDA has Branded entries
- * only, best coverage 7/12 nutrients (and corrupt iron µg/mg labelling) —
- * ADR-007 forbids partial or mirror-seeded data, so the engine hard-fails
- * (INCOMPLETE_INGREDIENT_DATA) and the Lab shows "nutrition pending".
+ * Third tier (ADR-030): when IFCT and USDA both fail, another national food
+ * composition table may supply a FULL profile, one source per nutrient row.
+ * Psyllium (RM-011) resolved 2026-10-12 via Frida NO (Matvaretabellen food
+ * 05.465, Plantago ovata, 18/18 nutrients) — USDA had Branded-only, corrupt
+ * iron; IFCT citations conflicted between secondary mirrors.
  * Pumpkin resolved via FDC 170556 (SR Legacy, 12/12, kJ→kcal patched).
  */
 import { readFileSync } from 'node:fs';
@@ -47,7 +47,47 @@ const NUTRIENT_PROFILE: Record<string, string> = {
   'RM-016': 'Pumpkin Seeds (Kaddu Beej)', // USDA fallback
   'RM-017': 'Sunflower seeds',
   'RM-018': 'Fenugreek seeds (Methi)',
+  'RM-011': 'Psyllium Husk (Isabgol)', // Frida NO tier (ADR-030)
 };
+
+const SINGLES: Array<{ slug: string; name: string; ingredientId: string; desc: string }> = [
+  {
+    slug: 'sharbati-wheat-atta',
+    name: 'Sharbati Wheat Atta',
+    ingredientId: 'RM-001',
+    desc: 'Single-origin Sharbati wheat, stone-milled whole. The rotli default of north India.',
+  },
+  {
+    slug: 'jau-atta',
+    name: 'Jau Atta (Barley)',
+    ingredientId: 'RM-002',
+    desc: 'Whole barley flour — soft, slightly sweet, fibre-rich; blends well into wheat rotis.',
+  },
+  {
+    slug: 'jowar-atta',
+    name: 'Jowar Atta (Sorghum)',
+    ingredientId: 'RM-007',
+    desc: 'Whole jowar flour for bhakri and soft rotis; a millet staple of central India.',
+  },
+  {
+    slug: 'ragi-atta',
+    name: 'Ragi Atta (Finger Millet)',
+    ingredientId: 'RM-008',
+    desc: 'Deep-coloured ragi flour — calcium-rich, malted-note flavour for rotis and dosas.',
+  },
+  {
+    slug: 'bajra-atta',
+    name: 'Bajra Atta (Pearl Millet)',
+    ingredientId: 'RM-009',
+    desc: 'Hearty pearl-millet flour, the winter bajri rotla classic.',
+  },
+  {
+    slug: 'moong-dal-flour',
+    name: 'Moong Dal Flour',
+    ingredientId: 'RM-013',
+    desc: 'Fine-milled yellow moong dal — besan-style base for cheela, pakodi and sweets.',
+  },
+];
 
 const META: Record<string, { category: string; base: boolean; cap: number | null }> = {
   'RM-001': { category: 'Base Grain', base: true, cap: null },
@@ -109,7 +149,10 @@ export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
   const rates = readJson('discovery/seed-ingredient-rates.json') as RateRow[];
   const ifct = readJson('discovery/ifct2017-mapped-nutrients.json') as Record<string, Record<string, unknown>>;
   const usda = readJson('discovery/usda-fallback-nutrients.json') as Record<string, Record<string, unknown>>;
-  const profiles: Record<string, Record<string, unknown>> = { ...ifct, ...usda };
+  const frida = readJson('discovery/frida-national-table-nutrients.json') as Record<string, Record<string, unknown>>;
+  /** ADR-007 tiers, last wins never: IFCT primary, USDA fallback, then other
+   *  national tables (ADR-030). Keys are disjoint per ingredient by design. */
+  const profiles: Record<string, Record<string, unknown>> = { ...frida, ...usda, ...ifct };
   const recipes = readJson('discovery/seed-premade-recipes.json') as Record<
     string,
     { lines: Array<{ ingredient_id: string; ratio_bps: number }> }
@@ -187,17 +230,22 @@ export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
       storeId: SEED_STORE_ID,
       name: p.name,
       slug: p.slug,
+      kind: 'premade',
       description: null,
     });
-    await db.insert(productVariants).values({
-      id: `pv_${key}_10`,
-      productId,
-      packSizeG: 10000,
-      costPaise: p.cost10,
-      sellPaise: p.sell10,
-      sellSource: p.provisional ? 'seed_sheet_midpoint' : 'client_sheet_2026',
-      provisional: Boolean(p.provisional),
-    });
+    /** ADR-021 packs 10/15/20 kg; larger packs price linearly off the 10 kg
+     *  sheet rate (client can re-rate per pack in admin later). */
+    await db.insert(productVariants).values(
+      [10000, 15000, 20000].map((g) => ({
+        id: `pv_${key}_${g / 1000}`,
+        productId,
+        packSizeG: g,
+        costPaise: (p.cost10 * g) / 10000,
+        sellPaise: (p.sell10 * g) / 10000,
+        sellSource: p.provisional ? 'seed_sheet_midpoint' : 'client_sheet_2026',
+        provisional: Boolean(p.provisional),
+      })),
+    );
     await db.insert(productRecipeLines).values(
       recipe.lines.map((l) => ({
         productId,
@@ -205,5 +253,38 @@ export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
         ratioBps: l.ratio_bps,
       })),
     );
+  }
+
+  /* Single-grain flours (ADR-029): one ingredient, milled — the market-standard
+   * SKUs (wheat atta, jau atta, …). Packs 1/5/10 kg; rates inherit the
+   * provisional per-kg ingredient rates until the client re-prices. */
+  const sellPerKg = new Map(rates.map((r) => [r.ingredient_id, r.sell_paise_per_kg]));
+  const costPerKg = new Map(rates.map((r) => [r.ingredient_id, r.cost_paise_per_kg]));
+  for (const sg of SINGLES) {
+    const productId = `pr_${sg.slug}`;
+    await db.insert(products).values({
+      id: productId,
+      storeId: SEED_STORE_ID,
+      name: sg.name,
+      slug: sg.slug,
+      kind: 'single',
+      description: sg.desc,
+    });
+    await db.insert(productVariants).values(
+      [1000, 5000, 10000].map((g) => ({
+        id: `pv_${sg.slug}_${g / 1000}`,
+        productId,
+        packSizeG: g,
+        costPaise: ((costPerKg.get(sg.ingredientId) ?? 0) * g) / 1000,
+        sellPaise: ((sellPerKg.get(sg.ingredientId) ?? 0) * g) / 1000,
+        sellSource: 'ingredient_rate_provisional',
+        provisional: true,
+      })),
+    );
+    await db.insert(productRecipeLines).values({
+      productId,
+      ingredientId: sg.ingredientId,
+      ratioBps: 10000,
+    });
   }
 }

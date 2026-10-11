@@ -9,6 +9,7 @@ import { createClient } from '@libsql/client';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { ingredients } from '../db/schema';
 import { SEED_STORE_ID, seedDatabase } from '../db/seed';
 import { MixError } from '../domain/mix-engine';
 import type { MixCalculateRequest } from './contracts';
@@ -93,14 +94,41 @@ describe('mix service over a migrated + seeded database', () => {
     expect(sum).toBe(calc.mix.pricing.rawPaise);
   });
 
+  it('psyllium prices from the Frida NO tier and labels its source (ADR-030)', async () => {
+    const calc = await calculateMixFromDb(
+      db,
+      req({
+        items: [
+          { ingredientId: 'RM-001', weightG: 9800 },
+          { ingredientId: 'RM-011', weightG: 200 },
+        ],
+      }),
+    );
+    expect(calc.nutritionSources['RM-011']?.enerc).toBe('Frida NO');
+    expect(calc.mix.composition).toHaveLength(2);
+  });
+
   it('409-class: an ingredient without nutrition data hard-fails, naming it', async () => {
+    await db.insert(ingredients).values({
+      id: 'RM-TEST-NO-NUTRITION',
+      storeId: SEED_STORE_ID,
+      name: 'Ghost Grain',
+      category: 'Test',
+      isBaseGrain: false,
+      maxPctBps: null,
+      costPaisePerKg: 100,
+      sellPaisePerKg: 200,
+      costSource: 'test',
+      sellSource: 'test',
+      ratesProvisional: true,
+    });
     await expect(
       calculateMixFromDb(
         db,
         req({
           items: [
             { ingredientId: 'RM-001', weightG: 9000 },
-            { ingredientId: 'RM-011', weightG: 1000 },
+            { ingredientId: 'RM-TEST-NO-NUTRITION', weightG: 1000 },
           ],
         }),
       ),

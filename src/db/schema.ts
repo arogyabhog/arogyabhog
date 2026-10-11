@@ -106,6 +106,8 @@ export const products = sqliteTable('products', {
     .references(() => stores.id),
   name: text('name').notNull(),
   slug: text('slug').notNull(),
+  /** 'premade' (locked house recipe) | 'single' (one grain, milled) — ADR-029. */
+  kind: text('kind').notNull().default('premade'),
   description: text('description'),
   status: text('status').notNull().default('active'),
   createdAt: integer('created_at')

@@ -16,9 +16,19 @@ const PACK_IMG: Record<string, string> = {
   'thyro-care-atta': '/img/pack-thyro-care.png',
   'high-protein-atta': '/img/pack-high-protein.png',
   'vitality-atta': '/img/pack-vitality.png',
+  'sharbati-wheat-atta': '/img/pack-wheat.png',
+  'jau-atta': '/img/pack-jau.png',
+  'jowar-atta': '/img/pack-jowar.png',
+  'ragi-atta': '/img/pack-ragi.png',
+  'bajra-atta': '/img/pack-bajra.png',
+  'moong-dal-flour': '/img/pack-moong.png',
 };
 
-export async function getStorefront(): Promise<{ ingredients: IngProp[]; preMades: PreMadeProp[] }> {
+export async function getStorefront(): Promise<{
+  ingredients: IngProp[];
+  preMades: PreMadeProp[];
+  singles: PreMadeProp[];
+}> {
   const ings = await db
     .select({
       id: ingredients.id,
@@ -52,7 +62,13 @@ export async function getStorefront(): Promise<{ ingredients: IngProp[]; preMade
       name: p.name,
       slug: p.slug,
       img: PACK_IMG[p.slug] ?? '/brand/logo-mark.png',
+      kind: (p.kind === 'single' ? 'single' : 'premade') as 'premade' | 'single',
+      desc: p.description,
       sellPaise: v?.sellPaise ?? 0,
+      packs: variants
+        .filter((x) => x.productId === p.id)
+        .sort((a, b) => a.packSizeG - b.packSizeG)
+        .map((x) => ({ g: x.packSizeG, sellPaise: x.sellPaise, provisional: Boolean(x.provisional) })),
       provisional: Boolean(v?.provisional),
       lines: named.map((n) => ({ name: n.name, bps: n.bps })),
       template: named.map((n) => ({ id: n.id, g: n.bps })), // bps == grams at 10 kg
@@ -61,13 +77,14 @@ export async function getStorefront(): Promise<{ ingredients: IngProp[]; preMade
 
   return {
     ingredients: ings.map((i) => ({ ...i, hasNutrition: withNutrition.has(i.id) })),
-    preMades,
+    preMades: preMades.filter((p) => p.kind === 'premade'),
+    singles: preMades.filter((p) => p.kind === 'single'),
   };
 }
 
 export async function getPreMade(slug: string) {
-  const { preMades } = await getStorefront();
-  return preMades.find((p) => p.slug === slug) ?? null;
+  const { preMades, singles } = await getStorefront();
+  return [...preMades, ...singles].find((p) => p.slug === slug) ?? null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -102,11 +119,20 @@ export async function getPreMadeDetail(slug: string): Promise<PreMadeDetail | nu
     const bag = byIng.get(r.ingredientId) ?? {};
     bag[r.nutrientKey] = r.valueX100 / 100; // DB stores ×100
     byIng.set(r.ingredientId, bag);
-    srcSet.add(/USDA/i.test(r.source) ? 'USDA' : /IFCT/i.test(r.source) ? 'IFCT 2017' : r.source);
+    srcSet.add(
+      /USDA/i.test(r.source)
+        ? 'USDA'
+        : /IFCT/i.test(r.source)
+          ? 'IFCT 2017'
+          : /Frida|Matvaretabellen/i.test(r.source)
+            ? 'Frida NO'
+            : r.source,
+    );
   }
 
   const profiles = premade.template.map((t) => ({ bps: t.g, values: byIng.get(t.id) ?? {} }));
-  const nutrition = blendNutrition(profiles, 10000); // 10 kg pack reference
+  /** Pack-size-independent disclosure: per 100 g + per 1 kg (ADR-029 packs vary). */
+  const nutrition = blendNutrition(profiles, 1000);
   const minCoverageBps = nutrition.length > 0 ? Math.min(...nutrition.map((n) => n.coverageBps)) : 0;
   const missingIngredients = premade.template
     .filter((t) => !byIng.has(t.id))

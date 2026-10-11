@@ -778,3 +778,15 @@ then in background and components. not too much but more then what we have now."
 **Consequences:** layout, home, shop, PDP and LabClient updated in place;
 design-system doc (07) to be refreshed with the new usage table next time it
 is opened. Reversal cost is one commit (token-level classes only).
+
+## ADR-029 — Product families: locked premades, single-grain flours, custom Lab mixes
+**Status:** Accepted 2026-10-12 · **Supersedes:** part of ADR-013 (Lab templates)
+**Context:** Client directive: the five house mixes must not be editable by customers; single-grain flours (wheat atta, jau, …) sold in the market should also be products; home shows six best-sellers mixing both kinds; shop lists singles first then mixes; the Lab keeps a "mix your own" mode. Loading locked recipes into the guardrailed composer also surfaced rule conflicts (Thyro-Care is wheat-free, Sugar-Care/Vitality sit under the 60% base-grain floor), which read as "calculation problems".
+**Decision:** `products.kind` ∈ {premade, single}. Premades and singles are quantity-only purchases (pack picker on PDP; premade packs 10/15/20 kg priced linearly off the sheet 10 kg rate, singles 1/5/10 kg off provisional per-kg ingredient rates). The Lab composer starts EMPTY and never loads a house recipe; house mixes appear above it as locked "order as-is" cards linking to their PDPs. PDP nutrition discloses per 100 g + per 1 kg (pack-size independent). Shop order: singles section, then blends. Home: six curated best-sellers across kinds.
+**Consequences:** rule-violating templates can no longer enter the composer (bug class closed); admin re-pricing per pack stays possible later; `?template=` param retired.
+
+## ADR-030 — Third nutrition source tier: other national composition tables
+**Status:** Accepted 2026-10-12 · **Amends:** ADR-007
+**Context:** Psyllium (RM-011) had no IFCT row usable without conflict (secondary IFCT mirrors disagree: 189 vs 350 kcal) and USDA offered Branded-only items with corrupt iron — so it stayed "nutrition pending", blocking Lab mixing and forcing coverage disclosures on High-Protein/Vitality.
+**Decision:** When IFCT 2017 and USDA both fail, a full profile from another national food-composition table may be seeded, one source per nutrient row (ADR-007 discipline unchanged). Psyllium seeded from Frida NO (Matvaretabellen food 05.465, Plantago ovata, values via Livsmedelsverket SE DB 2021.05): 206 kcal, protein 1.2 g, fat 0.5 g, carbs 10 g, fibre 78 g, Ca 184 mg, Fe 8.6 mg, Zn 0.3 mg, Mg 24 mg, P 41 mg, K 965 mg, Na 74 mg, B1 40 µg, B2 0, B3 0.4 mg, folate 58 µg (18/18 codes). `NutrientSource` gains 'Frida NO'; artefact `discovery/frida-national-table-nutrients.json`.
+**Consequences:** psyllium is mixable in the Lab; coverage disclosures on High-Protein (98.0%) and Vitality (99.0%) retire; provenance remains per-row and displayed. Client lab analysis, when available, overrides via the CLIENT tier.

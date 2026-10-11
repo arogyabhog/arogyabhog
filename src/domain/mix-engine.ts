@@ -198,7 +198,7 @@ export class EngineBugError extends Error {
  * Domain types
  * ------------------------------------------------------------------ */
 
-export type NutrientSource = 'IFCT2017' | 'USDA' | 'CLIENT' | 'LAB';
+export type NutrientSource = 'IFCT2017' | 'USDA' | 'Frida NO' | 'CLIENT' | 'LAB';
 
 export interface Ingredient {
   id: string;

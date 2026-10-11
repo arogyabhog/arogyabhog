@@ -1,0 +1,25 @@
+{
+  "Psyllium Husk (Isabgol)": {
+    "table_id": "Matvaretabellen.NO food 05.465 (Frida/FINELI family), values via Livsmedelsverket.SE DB 2021.05.03",
+    "scientific_name": "Plantago ovata",
+    "source": "Frida NO national table (Matvaretabellen) 2024",
+    "enerc": 206.0,
+    "protcnt": 1.2,
+    "fatce": 0.5,
+    "fasat": 0.0,
+    "fapu": 0.0,
+    "choavldf": 10.0,
+    "fibtg": 78.0,
+    "ca": 184.0,
+    "fe": 8.6,
+    "mg": 24.0,
+    "p": 41.0,
+    "k": 965.0,
+    "na": 74.0,
+    "zn": 300.0,
+    "thia": 40.0,
+    "ribf": 0.0,
+    "nia": 0.4,
+    "folsum": 58.0
+  }
+}

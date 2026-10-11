@@ -28,6 +28,8 @@ export interface MixCalculation {
 function toSource(s: string): NutrientSource {
   if (/IFCT/i.test(s)) return 'IFCT2017';
   if (/USDA/i.test(s)) return 'USDA';
+  /** ADR-030 third tier: other national composition tables, matched by name. */
+  if (/Frida|Matvaretabellen|Livsmedelsverket/i.test(s)) return 'Frida NO';
   if (/LAB/i.test(s)) return 'LAB';
   if (/CLIENT/i.test(s)) return 'CLIENT';
   throw new MixError('INCOMPLETE_INGREDIENT_DATA', `Unmapped nutrient source "${s}"`, { source: s });

@@ -20,7 +20,11 @@ export interface PreMadeProp {
   name: string;
   slug: string;
   img: string;
+  /** 'premade' = locked house recipe; 'single' = one grain milled (ADR-029). */
+  kind: 'premade' | 'single';
+  desc?: string | null;
   sellPaise: number;
+  packs: Array<{ g: number; sellPaise: number; provisional: boolean }>;
   provisional: boolean;
   lines: Array<{ name: string; bps: number }>;
   template: Array<{ id: string; g: number }>;
@@ -93,14 +97,12 @@ export function LabClient(props: {
   packs: number[];
   ingredients: IngProp[];
   preMades: PreMadeProp[];
-  template: Array<{ id: string; g: number }>;
-  templateSlug?: string;
 }) {
-  const { storeId, packs, ingredients, preMades, template } = props;
-  const [activeSlug, setActiveSlug] = useState<string | undefined>(props.templateSlug);
-  const [grams, setGrams] = useState<Record<string, number>>(() =>
-    Object.fromEntries(template.map((t) => [t.id, t.g])),
-  );
+  const { storeId, packs, ingredients, preMades } = props;
+  /** The Lab is "mix your own" only (ADR-029): house recipes are locked
+   *  products, so the composer always starts empty — no rule-violating
+   *  template can ever be loaded into the guardrailed builder. */
+  const [grams, setGrams] = useState<Record<string, number>>({});
   const [pack, setPack] = useState(10000);
   const [res, setRes] = useState<MixResponse | null>(null);
   const [err, setErr] = useState<ErrResponse['error'] | null>(null);
@@ -174,10 +176,41 @@ export function LabClient(props: {
       </p>
       <div className="gold-rule mt-4 mb-8" />
 
+      {/* House mixes are locked products (ADR-029): discoverable here, orderable as-is,
+        never editable — the composer below is for custom mixes only. */}
+      <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {preMades
+          .filter((p) => p.kind === 'premade')
+          .map((p) => (
+            <a
+              key={p.slug}
+              href={`/shop/${p.slug}`}
+              className="group rounded-card border border-ivory-300 bg-white p-3 shadow-warm transition hover:border-gold-400"
+            >
+              <div className="flex items-center gap-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.img} alt="" className="h-10 w-10 rounded-ctrl object-cover" />
+                <div className="min-w-0">
+                  <div className="truncate text-[13px] font-bold text-ink-900">
+                    {p.name.replace('ArogyaBhog ', '').replace(' Atta', '')}
+                  </div>
+                  <div className="tnum text-[11px] text-ink-500">
+                    ₹{(p.sellPaise / 100).toLocaleString('en-IN')} / 10 kg
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-forest-700 group-hover:underline">
+                House recipe · order as-is →
+              </div>
+            </a>
+          ))}
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr]">
         {/* ---- composer ---- */}
         <div className="rounded-card border border-ivory-300 bg-white p-4 shadow-warm">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-forest-700">Mix your own</div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-500">Pack size</span>
             {packs.map((p) => (
               <button
@@ -201,32 +234,6 @@ export function LabClient(props: {
                 Snap to pack
               </button>
             )}
-          </div>
-
-          {/* Start-from-a-blend (research lesson L2: the Lab opens from premade templates) */}
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-500">Start from a blend</span>
-            {preMades.map((p) => {
-              const short = p.name.replace('ArogyaBhog ', '').replace(' Atta', '');
-              return (
-                <button
-                  key={p.slug}
-                  type="button"
-                  onClick={() => {
-                    setPack(10000);
-                    setGrams(Object.fromEntries(p.template.map((t) => [t.id, t.g])));
-                    setActiveSlug(p.slug);
-                  }}
-                  className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                    activeSlug === p.slug
-                      ? 'border-forest-600 bg-forest-50 text-forest-700'
-                      : 'border-ivory-300 text-ink-500 hover:border-gold-400'
-                  }`}
-                >
-                  {short}
-                </button>
-              );
-            })}
           </div>
 
           <div className="mt-4 space-y-2">

@@ -4,6 +4,7 @@ const targets = [
   ['/', 'home'],
   ['/shop', 'shop'],
   ['/shop/high-protein-atta', 'pdp'],
+  ['/shop/sharbati-wheat-atta', 'single'],
   ['/lab', 'lab'],
 ];
 const sizes = [
