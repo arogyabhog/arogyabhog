@@ -1,13 +1,15 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-11T09:56Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T10:49Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* abfc8d2  (HEAD -> main) ops — production build + no-store headers; preview stale-cache lockdown
-* 50f45da  (origin/main) chore — biome ignores Next-generated next-env.d.ts
+* 89776fe  (HEAD -> main) feat — product families (locked premades + 6 single-grain flours + custom-only Lab, ADR-029) and psyllium nutrition resolved via Frida NO national table (ADR-030); pack picker, per-1kg disclosure, shop/home restructure; tests 112/112
+* f552137  (origin/main) docs — production serving note + graph
+* abfc8d2  ops — production build + no-store headers; preview stale-cache lockdown
+* 50f45da  chore — biome ignores Next-generated next-env.d.ts
 * 8084d2b  style — biome.json layout
 * 5caa189  docs — structure pass notes + graph
 * 7b52649  design — structure pass per client screenshots + ui-ux-pro-max-skill rules: 3-zone nav w/ active state, framed hero, numbered value band, uniform cards, compact Lab, roomier PDP tables, 4-col footer, regenerated pack imagery
@@ -43,6 +45,7 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
 - **2026-10-11** 580c9c6 — feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
 - **2026-10-11** a5b7bdc — feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
 - **2026-10-11** ed21602 — feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
+- **2026-10-11** 89776fe — feat — product families (locked premades + 6 single-grain flours + custom-only Lab, ADR-029) and psyllium nutrition resolved via Frida NO national table (ADR-030); pack picker, per-1kg disclosure, shop/home restructure; tests 112/112
 
 
 ## Tracked tree
@@ -66,6 +69,7 @@ brand-board.html
   FINDINGS.md
   SEED_RATES.md
   arogyabhog-main-sheet.xlsx
+  frida-national-table-nutrients.json
   ifct2017-mapped-nutrients.json
   seed-ingredient-rates.json
   seed-premade-recipes.json
@@ -73,8 +77,10 @@ brand-board.html
 drizzle.config.ts
   0000_black_puma.sql
   0001_talented_master_chief.sql
+  0002_abnormal_morbius.sql
     0000_snapshot.json
     0001_snapshot.json
+    0002_snapshot.json
     _journal.json
 next-env.d.ts
 next.config.ts
@@ -84,11 +90,17 @@ postcss.config.mjs
     logo-mark.png
     logo-wordmark.png
     hero-grains.png
+    pack-bajra.png
     pack-everyday.png
     pack-high-protein.png
+    pack-jau.png
+    pack-jowar.png
+    pack-moong.png
+    pack-ragi.png
     pack-sugar-care.png
     pack-thyro-care.png
     pack-vitality.png
+    pack-wheat.png
   db-setup.ts
   history-graph.sh
   screenshot.mjs
@@ -101,6 +113,8 @@ postcss.config.mjs
       page.tsx
     LabClient.tsx
     NavBar.tsx
+    PackPicker.tsx
+    ProductCard.tsx
     client.ts
     schema.ts
     seed.ts
@@ -122,6 +136,6 @@ vitest.config.ts
 
 ## Head
 
-abfc8d21c8fa436250435f7fbd45d1f0ac508d7b
-2026-10-11 09:56:03 +0000
-ops — production build + no-store headers; preview stale-cache lockdown
+89776fe7eb0c3286c556a29f56839685ee7c1186
+2026-10-11 10:49:46 +0000
+feat — product families (locked premades + 6 single-grain flours + custom-only Lab, ADR-029) and psyllium nutrition resolved via Frida NO national table (ADR-030); pack picker, per-1kg disclosure, shop/home restructure; tests 112/112
