@@ -1,13 +1,17 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-11T09:48Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T09:56Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* 7b52649  (HEAD -> main) design — structure pass per client screenshots + ui-ux-pro-max-skill rules: 3-zone nav w/ active state, framed hero, numbered value band, uniform cards, compact Lab, roomier PDP tables, 4-col footer, regenerated pack imagery
-* ae384f7  (origin/main) style — biome.json formatter layout
+* abfc8d2  (HEAD -> main) ops — production build + no-store headers; preview stale-cache lockdown
+* 50f45da  (origin/main) chore — biome ignores Next-generated next-env.d.ts
+* 8084d2b  style — biome.json layout
+* 5caa189  docs — structure pass notes + graph
+* 7b52649  design — structure pass per client screenshots + ui-ux-pro-max-skill rules: 3-zone nav w/ active state, framed hero, numbered value band, uniform cards, compact Lab, roomier PDP tables, 4-col footer, regenerated pack imagery
+* ae384f7  style — biome.json formatter layout
 * 533cd27  chore — exclude playwright browser cache from biome; drop stray sudo marker file
 * 25ba0a3  docs — visual QA harness + UI bug post-mortem, graph
 * 9755750  fix — root-cause the four reported UI bugs: Lab min-content overflow (grid tracks), UA blue chrome (global focus/tap/accent), green off product cards, mobile hero legibility + contrast sweep; add playwright screenshot/overflow harness
@@ -73,6 +77,7 @@ drizzle.config.ts
     0001_snapshot.json
     _journal.json
 next-env.d.ts
+next.config.ts
 package-lock.json
 package.json
 postcss.config.mjs
@@ -117,6 +122,6 @@ vitest.config.ts
 
 ## Head
 
-7b5264927750edb925de483d8147c0cdda02ca9d
-2026-10-11 09:48:13 +0000
-design — structure pass per client screenshots + ui-ux-pro-max-skill rules: 3-zone nav w/ active state, framed hero, numbered value band, uniform cards, compact Lab, roomier PDP tables, 4-col footer, regenerated pack imagery
+abfc8d21c8fa436250435f7fbd45d1f0ac508d7b
+2026-10-11 09:56:03 +0000
+ops — production build + no-store headers; preview stale-cache lockdown
