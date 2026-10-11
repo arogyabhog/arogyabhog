@@ -1,13 +1,15 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-11T08:47Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T09:09Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* a5b7bdc  (HEAD -> main) feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
-* 457bad5  (origin/main) docs — history graph + current state
+* ed21602  (HEAD -> main) feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
+* d926c37  (origin/main) docs — ADR-027, current state, history graph
+* a5b7bdc  feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
+* 457bad5  docs — history graph + current state
 * 580c9c6  feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
 * b5948dc  docs — regenerate history graph
 * 6875496  feat — first UI look: Lab configurator + premade grid (Tailwind v4 on ADR-022/025 tokens), USDA fallback seeded (chia FDC 170554, buckwheat FDC 170687), AI hero + 5 pack images, biome config, db-setup script; tests 64/64
@@ -30,6 +32,7 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
 - **2026-10-10** 6875496 — feat — first UI look: Lab configurator + premade grid (Tailwind v4 on ADR-022/025 tokens), USDA fallback seeded (chia FDC 170554, buckwheat FDC 170687), AI hero + 5 pack images, biome config, db-setup script; tests 64/64
 - **2026-10-11** 580c9c6 — feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
 - **2026-10-11** a5b7bdc — feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
+- **2026-10-11** ed21602 — feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
 
 
 ## Tracked tree
@@ -90,6 +93,8 @@ postcss.config.mjs
     seed.ts
     mix-engine.test.ts
     mix-engine.ts
+    nutrition-blend.test.ts
+    nutrition-blend.ts
     order-engine.test.ts
     order-engine.ts
     contracts.ts
@@ -104,6 +109,6 @@ vitest.config.ts
 
 ## Head
 
-a5b7bdc3d95065db2576682851e3136b5f4182b2
-2026-10-11 08:47:23 +0000
-feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
+ed21602710cdda8b80b004bc10efe9e1a67948b4
+2026-10-11 09:09:25 +0000
+feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
