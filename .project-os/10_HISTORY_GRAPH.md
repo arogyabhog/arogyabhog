@@ -1,13 +1,17 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-11T09:23Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T09:48Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* 9755750  (HEAD -> main) fix — root-cause the four reported UI bugs: Lab min-content overflow (grid tracks), UA blue chrome (global focus/tap/accent), green off product cards, mobile hero legibility + contrast sweep; add playwright screenshot/overflow harness
-* 5c94bee  (origin/main) docs — ADR-028 + current state + graph
+* 7b52649  (HEAD -> main) design — structure pass per client screenshots + ui-ux-pro-max-skill rules: 3-zone nav w/ active state, framed hero, numbered value band, uniform cards, compact Lab, roomier PDP tables, 4-col footer, regenerated pack imagery
+* ae384f7  (origin/main) style — biome.json formatter layout
+* 533cd27  chore — exclude playwright browser cache from biome; drop stray sudo marker file
+* 25ba0a3  docs — visual QA harness + UI bug post-mortem, graph
+* 9755750  fix — root-cause the four reported UI bugs: Lab min-content overflow (grid tracks), UA blue chrome (global focus/tap/accent), green off product cards, mobile hero legibility + contrast sweep; add playwright screenshot/overflow harness
+* 5c94bee  docs — ADR-028 + current state + graph
 * ed21602  feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
 * d926c37  docs — ADR-027, current state, history graph
 * a5b7bdc  feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
@@ -52,7 +56,6 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
   08_STACK_COMPARISON.md
   09_COMPETITIVE_RESEARCH.md
   10_HISTORY_GRAPH.md
-.sudo_as_admin_successful
 README.md
 biome.json
 brand-board.html
@@ -92,6 +95,7 @@ postcss.config.mjs
         page.tsx
       page.tsx
     LabClient.tsx
+    NavBar.tsx
     client.ts
     schema.ts
     seed.ts
@@ -113,6 +117,6 @@ vitest.config.ts
 
 ## Head
 
-975575007060a44ca99916b66880ad937dce16c4
-2026-10-11 09:23:05 +0000
-fix — root-cause the four reported UI bugs: Lab min-content overflow (grid tracks), UA blue chrome (global focus/tap/accent), green off product cards, mobile hero legibility + contrast sweep; add playwright screenshot/overflow harness
+7b5264927750edb925de483d8147c0cdda02ca9d
+2026-10-11 09:48:13 +0000
+design — structure pass per client screenshots + ui-ux-pro-max-skill rules: 3-zone nav w/ active state, framed hero, numbered value band, uniform cards, compact Lab, roomier PDP tables, 4-col footer, regenerated pack imagery
