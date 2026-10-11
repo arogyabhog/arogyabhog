@@ -822,3 +822,13 @@ is opened. Reversal cost is one commit (token-level classes only).
 **Context:** ADR-008 requires client-entered ingredient selling rates and a mandatory checker, while the initial Drizzle schema retained only the current ingredient rates and could not explain their provenance over time.
 **Decision:** Add append-only `ingredient_price_history` snapshots and a per-store `price_consistency_tolerance_bps` (default 500 bps / 5%). Admin rate updates parse/validate integer paise, are store-scoped and transactional, clear provisional status, set source to `client`, write before/after audit data, and append a history row. Existing rates are backfilled by migration 0005; seed creates baseline snapshots. Premade checker rebuilds ingredient + milling + packaging + GST-inclusive pricing and compares it with shelf price; order-level delivery is excluded. Provisional rates always require review; otherwise flag variance over store tolerance.
 **Consequences:** Rate changes remain explainable and auditable without rewriting prior snapshots. Store-specific tolerance is configurable. Dashboard exposes provisional-rate workload. No automatic product repricing is performed.
+
+### ADR-031 implementation note — cross-site embedded preview sessions (2026-10-12)
+Arena serves the workspace app inside a cross-site iframe. Browser `SameSite=Lax`
+prevents the staff session cookie from being sent back in that embedded preview,
+so a successful sign-in appeared to fall back to `/login` or the storefront. For
+the explicitly opted-in `ARENA_EMBEDDED_PREVIEW=1` preview process only, set the
+session cookie `SameSite=None; Secure`; production/default remains `Lax`. Admin
+access still requires an ADMIN or MANAGER account. Preview login displays the
+seed-only staff credentials; never enable this flag or seed credentials in a
+real deployment.

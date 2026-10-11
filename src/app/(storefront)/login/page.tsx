@@ -53,7 +53,7 @@ export default async function LoginPage({
           >
             Sign in
           </button>
-          {process.env.NODE_ENV !== 'production' && (
+          {(process.env.NODE_ENV !== 'production' || process.env.ARENA_EMBEDDED_PREVIEW === '1') && (
             <p className="text-[11px] leading-5 text-ink-500">
               Dev credentials: owner@arogyabhog.local / arogyabhog-dev-admin · manager@arogyabhog.local /
               arogyabhog-dev-manager

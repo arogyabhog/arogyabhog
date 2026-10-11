@@ -18,6 +18,16 @@ import {
   writeAudit,
 } from '@/server/auth';
 
+// Arena embeds preview apps cross-site; Lax cookies are withheld in that iframe.
+// Opt into None only for the preview process, leaving production's Lax default intact.
+const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: process.env.ARENA_EMBEDDED_PREVIEW === '1' ? ('none' as const) : ('lax' as const),
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+  maxAge: SESSION_DAYS * 24 * 60 * 60,
+};
+
 /** Open-redirect guard: only same-origin absolute paths, never protocol-relative. */
 function safeNext(formData: FormData): string | null {
   const n = String(formData.get('next') ?? '');
@@ -44,7 +54,7 @@ export async function login(formData: FormData): Promise<void> {
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: sessionCookieOptions.sameSite,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: SESSION_DAYS * 24 * 60 * 60,
@@ -112,7 +122,7 @@ export async function register(formData: FormData): Promise<void> {
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: sessionCookieOptions.sameSite,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: SESSION_DAYS * 24 * 60 * 60,
