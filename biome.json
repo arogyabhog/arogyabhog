@@ -5,6 +5,7 @@
       "!**/*.css",
       "!.cache",
       "!.ref",
+      "!next-env.d.ts",
       "!migrations",
       "!discovery",
       "!package-lock.json",
