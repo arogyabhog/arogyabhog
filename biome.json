@@ -6,6 +6,7 @@
       "!.cache",
       "!.ref",
       "!next-env.d.ts",
+      "!.next",
       "!migrations",
       "!discovery",
       "!package-lock.json",

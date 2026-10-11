@@ -152,6 +152,18 @@ export const productRecipeLines = sqliteTable(
   (t) => [primaryKey({ columns: [t.productId, t.ingredientId] })],
 );
 
+/** Cookie-backed sessions (ADR-031): opaque token, 30-day expiry, no JWT. */
+export const sessions = sqliteTable('sessions', {
+  token: text('token').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at')
+    .notNull()
+    .$defaultFn(() => Date.now()),
+  expiresAt: integer('expires_at').notNull(),
+});
+
 /** Mandatory audit trail (ADR-015): who changed what, with before/after. */
 export const auditLog = sqliteTable('audit_log', {
   id: integer('id').primaryKey({ autoIncrement: true }),

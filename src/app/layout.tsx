@@ -71,6 +71,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-forest-100/60 sm:px-6">
               <span>© 2026 ArogyaBhog · Kanpur, Uttar Pradesh</span>
               <span className="tnum">Prices GST-inclusive 5% · HSN 11010000</span>
+              <a href="/login" className="font-semibold text-forest-100/80 hover:text-gold-200">
+                Staff login
+              </a>
             </div>
           </div>
         </footer>

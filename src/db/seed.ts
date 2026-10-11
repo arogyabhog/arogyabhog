@@ -16,6 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
+import { hashPassword } from '../server/passwords';
 import {
   ingredientNutrition,
   ingredients,
@@ -27,6 +28,11 @@ import {
 } from './schema';
 
 export const SEED_STORE_ID = 'st_knp_01';
+
+/** Dev-only credentials (printed by /login in dev). Rotated at deploy time —
+ *  the seeder hashes at runtime, so no hash literal ever lands in git. */
+const DEV_ADMIN_HASH = hashPassword(process.env.DEV_ADMIN_PASSWORD ?? 'arogyabhog-dev-admin');
+const DEV_MANAGER_HASH = hashPassword(process.env.DEV_MANAGER_PASSWORD ?? 'arogyabhog-dev-manager');
 
 /** ingredient id → profile key in the IFCT json, else the USDA json */
 const NUTRIENT_PROFILE: Record<string, string> = {
@@ -171,11 +177,22 @@ export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
   });
 
   await db.insert(users).values({
+    id: 'us_mgr_seed',
+    role: 'MANAGER',
+    storeId: SEED_STORE_ID,
+    email: 'manager@arogyabhog.local',
+    passwordHash: DEV_MANAGER_HASH,
+    displayName: 'Kanpur Manager',
+    referralCode: 'MGR00001',
+    freeDeliveryCredits: 1,
+  });
+
+  await db.insert(users).values({
     id: 'us_admin_seed',
     role: 'ADMIN',
     storeId: null,
     email: 'owner@arogyabhog.local',
-    passwordHash: 'REPLACE_AT_DEPLOY',
+    passwordHash: DEV_ADMIN_HASH, // dev-only credential; rotated at deploy
     displayName: 'Owner',
     referralCode: 'OWNER0001',
     freeDeliveryCredits: 1,
@@ -270,8 +287,10 @@ export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
       kind: 'single',
       description: sg.desc,
     });
+    /** Client rule 2026-10-13: 5 kg exists ONLY for custom mixes; every
+     *  boxed product sells 10/15/20 kg (ADR-029 amendment). */
     await db.insert(productVariants).values(
-      [1000, 5000, 10000].map((g) => ({
+      [10000, 15000, 20000].map((g) => ({
         id: `pv_${sg.slug}_${g / 1000}`,
         productId,
         packSizeG: g,
