@@ -1,13 +1,15 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-10T22:36Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T08:38Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* 6875496  (HEAD -> main) feat — first UI look: Lab configurator + premade grid (Tailwind v4 on ADR-022/025 tokens), USDA fallback seeded (chia FDC 170554, buckwheat FDC 170687), AI hero + 5 pack images, biome config, db-setup script; tests 64/64
-* 789f13e  (origin/main) chore: history-graph milestones via awk (grep -E asterisk escaping unreliable here)
+* 580c9c6  (HEAD -> main) feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
+* b5948dc  (origin/main) docs — regenerate history graph
+* 6875496  feat — first UI look: Lab configurator + premade grid (Tailwind v4 on ADR-022/025 tokens), USDA fallback seeded (chia FDC 170554, buckwheat FDC 170687), AI hero + 5 pack images, biome config, db-setup script; tests 64/64
+* 789f13e  chore: history-graph milestones via awk (grep -E asterisk escaping unreliable here)
 * dc4954d  chore: refresh history graph (fix milestone grep: closing ** after date)
 * 21bbb68  feat(slice): DB + API vertical slice — schema, migration, seed, mix endpoint
 * 536b126  docs: README + competitive research (09); untrack .ssh
@@ -24,6 +26,7 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
 - **2026-10-10** 361a93d — add: deploy key issued; forest accent (ADR-025); provisional seed rates (ADR-026)
 - **2026-10-10** 21bbb68 — feat(slice): DB + API vertical slice — schema, migration, seed, mix endpoint
 - **2026-10-10** 6875496 — feat — first UI look: Lab configurator + premade grid (Tailwind v4 on ADR-022/025 tokens), USDA fallback seeded (chia FDC 170554, buckwheat FDC 170687), AI hero + 5 pack images, biome config, db-setup script; tests 64/64
+- **2026-10-11** 580c9c6 — feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
 
 
 ## Tracked tree
@@ -71,8 +74,11 @@ postcss.config.mjs
   history-graph.sh
             route.ts
     globals.css
+      page.tsx
     layout.tsx
     page.tsx
+        page.tsx
+      page.tsx
     LabClient.tsx
     client.ts
     schema.ts
@@ -82,12 +88,13 @@ postcss.config.mjs
     contracts.ts
     mix-service.test.ts
     mix-service.ts
+    storefront-data.ts
 tsconfig.json
 vitest.config.ts
 ```
 
 ## Head
 
-6875496bf4c09fc852e548807226bc5be584aecc
-2026-10-10 22:36:23 +0000
-feat — first UI look: Lab configurator + premade grid (Tailwind v4 on ADR-022/025 tokens), USDA fallback seeded (chia FDC 170554, buckwheat FDC 170687), AI hero + 5 pack images, biome config, db-setup script; tests 64/64
+580c9c6d1a0b838ab5fad95f7f41acb65d43948a
+2026-10-11 08:38:52 +0000
+feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
