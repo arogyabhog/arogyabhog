@@ -1,13 +1,15 @@
 # 10 — HISTORY GRAPH (regenerate: `npm run graph`)
 
-_Generated 2026-10-11T14:44Z from git. Cheap context for any new session:_
+_Generated 2026-10-11T14:45Z from git. Cheap context for any new session:_
 _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch._
 
 ## Commit graph
 
 ```
-* 652aa7d  (HEAD -> main) feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
-* f552137  (origin/main) docs — production serving note + graph
+* ed0baed  (HEAD -> main) feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
+* ab1cb70  (origin/main) docs — ADR-029/030 + state + graph
+* 89776fe  feat — product families (locked premades + 6 single-grain flours + custom-only Lab, ADR-029) and psyllium nutrition resolved via Frida NO national table (ADR-030); pack picker, per-1kg disclosure, shop/home restructure; tests 112/112
+* f552137  docs — production serving note + graph
 * abfc8d2  ops — production build + no-store headers; preview stale-cache lockdown
 * 50f45da  chore — biome ignores Next-generated next-env.d.ts
 * 8084d2b  style — biome.json layout
@@ -45,7 +47,8 @@ _read this + 01_CURRENT_STATE.md instead of re-deriving the project from scratch
 - **2026-10-11** 580c9c6 — feat — separate pages (home/shop/PDP/lab w/ template deep-link) + USDA pumpkin FDC 170556 unblocks RM-016; psyllium documented as Branded-only dead-end; tests 65/65
 - **2026-10-11** a5b7bdc — feat — orders+payments slice (ADR-027): two state machines, frozen money snapshots, delivery credits, dual audit; USDA pumpkin unblocked earlier this session; tests 103/103
 - **2026-10-11** ed21602 — feat — PDP nutrition tables (18 nutrients × per-100g/per-pack, coverage-honest), benefit lines, forest-green promotion per client (ADR-028), responsive pass; recipe-truthful copy; tests 111/111
-- **2026-10-11** 652aa7d — feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
+- **2026-10-11** 89776fe — feat — product families (locked premades + 6 single-grain flours + custom-only Lab, ADR-029) and psyllium nutrition resolved via Frida NO national table (ADR-030); pack picker, per-1kg disclosure, shop/home restructure; tests 112/112
+- **2026-10-11** ed0baed — feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
 
 
 ## Tracked tree
@@ -150,6 +153,6 @@ vitest.config.ts
 
 ## Head
 
-652aa7d1e57cb264e24b3bc387a5d44154cf4c12
-2026-10-11 14:44:37 +0000
+ed0baedfef90ef932f4203d21aa25d3eed9e70cb
+2026-10-11 14:45:41 +0000
 feat — auth + RBAC slice (ADR-031): scrypt sessions, /login, gated /admin console + audit log with CSV export; pack rule: 5 kg Lab-only (ADR-029 amendment); tests 119/119 + 7/7 browser flow
