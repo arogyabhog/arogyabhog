@@ -1,9 +1,9 @@
 # 01 — CURRENT STATE
 
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
-**Last updated:** 2026-10-11
-**Git SHA:** see `git log`
-**Active branch:** `feat/admin-catalog`
+**Last updated:** 2026-10-12
+**Git SHA:** `eff8ddb` (ingredient pricing feature committed locally; push blocked pending GitHub authentication)
+**Active branch:** `feat/admin-ingredient-pricing` (branched from `feat/admin-catalog`; do not merge into `main` yet)
 
 ---
 
@@ -18,13 +18,13 @@
 | Pricing model | ✅ DECIDED — admin sets 18 rates by hand + mandatory Price Consistency Checker (ADR-008) |
 | Referral system | ✅ DECIDED — credits on first DELIVERED order, cap 10, referee bonus (ADR-017) |
 | Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
-| Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0004; living design doc remains reviewable |
+| Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0005; ingredient price history and per-store consistency tolerance added |
 | API / server boundaries | ✅ Mix calculation API, Zod validation, and authenticated checkout/order server actions implemented |
-| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 128 project tests currently green |
+| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 133 project tests currently green |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | ✅ Customer storefront/checkout; separate admin shell, actionable dashboard, order queue, and per-item product editor (details, variants, premade ratios). Ingredient pricing, consistency checker, settings, and remaining admin modules are pending |
+| UI layer | 🟡 Storefront/checkout + admin shell/order queue/catalog editor complete; ingredient rate history/editor, price consistency checker, and dashboard rate-review queue implemented; store settings and remaining admin modules pending |
 
 ---
 
@@ -85,10 +85,10 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Build ingredient rate review + price-consistency checker, then store settings.
-2. Add missing schema and interfaces for inventory, coupons, referrals, staff, and reports in separate feature branches, validating each against ADRs and actual requirements.
+1. Finish and verify `feat/admin-ingredient-pricing`: dashboard rate-review queue, update schema documentation/decision log, run lint/typecheck/tests/build and smoke checks; inspect diff before commit/push.
+2. Continue the complete admin-panel scope one feature branch at a time: store settings, inventory, coupons/referrals, staff administration, reports, and audit/order hardening. Design and migrate any absent schema; do not defer for missing schema.
 3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
-4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks.
+4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks. Merge completed feature branches only after verification and approval.
 
 ## DELIBERATELY DEFERRED
 
@@ -146,3 +146,5 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 19. **2026-10-11 — Admin dashboard.** Replaced KPI-only cards with active-order and UPI-review counts linked to the order desk, a concrete list of awaiting UPI claims, latest eight order rows, and a direct audit-log action. Manager queries are store-scoped server-side (including the null-store case returns no orders). Verified: typecheck, lint, 122 tests, production build, and authenticated `/admin` HTTP 200 with the new worklists. Branch: `feat/admin-dashboard`.
 
 20. **2026-10-11 — Admin catalog editor.** Added `/admin/products` list and `/admin/products/[id]` editor for every seeded SKU: product name/description/status; each pack's independent cost/sell price and visibility; and existing premade ingredient ratios with exact 10,000-bps validation. Slugs stay fixed and recipe membership cannot be silently changed. All writes are staff/store-scoped and append before/after audit rows; price input is parsed from decimal text to integer paise. Storefront listing/PDP queries now hide inactive products/variants, and order creation refuses inactive SKUs. Verification: typecheck, lint, 128 tests, production build, authenticated HTTP 200 for catalog/list/detail. No new database migration; see ADR-033. Branch: `feat/admin-catalog`.
+
+21. **2026-10-12 — Ingredient pricing and consistency feature in progress.** On `feat/admin-ingredient-pricing` based on catalog branch. Added `ingredient_price_history`, per-store 500 bps tolerance, migration 0005 and existing-rate backfill; baseline seed snapshots; transactional, store-scoped audited integer-paise rate editor with per-ingredient history; recipe rebuild consistency checker (raw rates + milling + packaging + GST, no order delivery); and dashboard provisional-rate count/worklist. Provisional rates require review regardless of variance. Verification: typecheck, Biome, all 133 tests, production build, fresh local migration+seed, and `git diff --check` passed. Build retains the known seed filesystem-tracing warning. Commit `eff8ddb` created locally. Push attempted after GitHub host verification setup but failed because no private deploy key is present in this workspace (`Permission denied (publickey)`); do not generate another key. No merge to main.

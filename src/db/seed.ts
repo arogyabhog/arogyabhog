@@ -19,6 +19,7 @@ import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { hashPassword } from '../server/passwords';
 import {
   ingredientNutrition,
+  ingredientPriceHistory,
   ingredients,
   productRecipeLines,
   products,
@@ -214,6 +215,16 @@ export async function seedDatabase(db: LibSQLDatabase): Promise<void> {
       sellSource: r.sell_source,
       ratesProvisional: r.rates_provisional,
       reviewNote: r.review_note || null,
+    });
+    await db.insert(ingredientPriceHistory).values({
+      storeId: SEED_STORE_ID,
+      ingredientId: r.ingredient_id,
+      costPaisePerKg: r.cost_paise_per_kg,
+      sellPaisePerKg: r.sell_paise_per_kg,
+      costSource: r.cost_source,
+      sellSource: r.sell_source,
+      ratesProvisional: r.rates_provisional,
+      actorUserId: null,
     });
 
     const profileKey = NUTRIENT_PROFILE[r.ingredient_id];

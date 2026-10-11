@@ -8,7 +8,7 @@
  * in the next increment.
  */
 import { sql } from 'drizzle-orm';
-import { check, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { check, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const stores = sqliteTable('stores', {
   id: text('id').primaryKey(),
@@ -28,6 +28,8 @@ export const stores = sqliteTable('stores', {
   upiVpa: text('upi_vpa').notNull().default('arogyabhog@upi'),
   referralCreditCap: integer('referral_credit_cap').notNull().default(10),
   refereeBonusCredits: integer('referee_bonus_credits').notNull().default(1),
+  /** Price checker warning threshold: 500 bps = 5% of premade shelf price. */
+  priceConsistencyToleranceBps: integer('price_consistency_tolerance_bps').notNull().default(500),
   createdAt: integer('created_at')
     .notNull()
     .$defaultFn(() => Date.now()),
@@ -82,6 +84,34 @@ export const ingredients = sqliteTable(
     // store, not merely refused by the API.
     check('ingredients_cost_positive', sql`${t.costPaisePerKg} > 0`),
     check('ingredients_sell_positive', sql`${t.sellPaisePerKg} > 0`),
+  ],
+);
+
+/** Append-only price snapshots: one immutable row per admin-confirmed rate change. */
+export const ingredientPriceHistory = sqliteTable(
+  'ingredient_price_history',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => stores.id),
+    ingredientId: text('ingredient_id')
+      .notNull()
+      .references(() => ingredients.id),
+    costPaisePerKg: integer('cost_paise_per_kg').notNull(),
+    sellPaisePerKg: integer('sell_paise_per_kg').notNull(),
+    costSource: text('cost_source').notNull(),
+    sellSource: text('sell_source').notNull(),
+    ratesProvisional: integer('rates_provisional', { mode: 'boolean' }).notNull(),
+    actorUserId: text('actor_user_id').references(() => users.id),
+    changedAt: integer('changed_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    check('ingredient_price_history_cost_positive', sql`${t.costPaisePerKg} > 0`),
+    check('ingredient_price_history_sell_positive', sql`${t.sellPaisePerKg} > 0`),
+    index('ingredient_price_history_store_item_time').on(t.storeId, t.ingredientId, t.changedAt),
   ],
 );
 

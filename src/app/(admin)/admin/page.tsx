@@ -1,7 +1,7 @@
 import { and, count, desc, eq, notInArray, type SQL } from 'drizzle-orm';
 import Link from 'next/link';
 import { db } from '@/db/client';
-import { orders } from '@/db/schema';
+import { ingredients, orders, stores } from '@/db/schema';
 import { requireStaff } from '@/server/auth';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,24 @@ export default async function AdminOverview() {
   const staff = await requireStaff();
   const scope = staff.role === 'MANAGER' ? eq(orders.storeId, staff.storeId ?? '') : undefined;
   const scoped = (condition?: SQL) => (scope ? and(scope, condition) : condition);
+  const ingredientScope = staff.role === 'MANAGER' ? eq(ingredients.storeId, staff.storeId ?? '') : undefined;
+  const needsRateReview = and(ingredientScope, eq(ingredients.ratesProvisional, true), eq(ingredients.active, true));
+
+  const [provisionalResult] = await db.select({ n: count() }).from(ingredients).where(needsRateReview);
+  const provisionalRows = await db
+    .select({
+      id: ingredients.id,
+      name: ingredients.name,
+      sellPaisePerKg: ingredients.sellPaisePerKg,
+      storeName: stores.name,
+      reviewNote: ingredients.reviewNote,
+    })
+    .from(ingredients)
+    .innerJoin(stores, eq(stores.id, ingredients.storeId))
+    .where(needsRateReview)
+    .orderBy(ingredients.name)
+    .limit(6)
+    .all();
 
   const [activeResult] = await db
     .select({ n: count() })
@@ -86,6 +104,14 @@ export default async function AdminOverview() {
           <p className="text-xs font-bold uppercase tracking-wider text-forest-700">UPI claims to verify</p>
           <p className="mt-2 tnum font-display text-3xl font-bold text-ink-900">{upiResult?.n ?? 0}</p>
           <p className="mt-1 text-xs text-ink-500">Customer attested; check the bank statement before confirming</p>
+        </Link>
+        <Link
+          href="/admin/ingredients"
+          className="rounded-card border border-ivory-300 bg-white p-5 shadow-warm transition hover:border-forest-300"
+        >
+          <p className="text-xs font-bold uppercase tracking-wider text-forest-700">Provisional rate sets</p>
+          <p className="mt-2 tnum font-display text-3xl font-bold text-ink-900">{provisionalResult?.n ?? 0}</p>
+          <p className="mt-1 text-xs text-ink-500">Review individual ingredient prices</p>
         </Link>
       </section>
 
@@ -168,6 +194,46 @@ export default async function AdminOverview() {
             </p>
           )}
         </div>
+      </section>
+
+      <section className="overflow-hidden rounded-card border border-amber-200 bg-white shadow-warm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-100 bg-amber-50 px-5 py-4">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-ink-900">Ingredient rates to review</h2>
+            <p className="mt-1 text-xs text-ink-500">
+              Provisional rates are excluded from confidence in recipe price checks.
+            </p>
+          </div>
+          <Link href="/admin/ingredients" className="text-xs font-bold text-forest-700 hover:underline">
+            Manage rates
+          </Link>
+        </div>
+        {provisionalRows.length ? (
+          <ul className="divide-y divide-ivory-200">
+            {provisionalRows.map((ingredient) => (
+              <li key={ingredient.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                <div>
+                  <p className="font-semibold text-ink-900">{ingredient.name}</p>
+                  <p className="mt-1 text-xs text-ink-500">
+                    {staff.role === 'ADMIN' ? `${ingredient.storeName} · ` : ''}
+                    {ingredient.reviewNote ?? 'Rate requires verification'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="tnum text-sm text-ink-700">{money(ingredient.sellPaisePerKg)}/kg</span>
+                  <Link
+                    href="/admin/ingredients"
+                    className="rounded-lg border border-forest-600 px-3 py-2 text-xs font-bold text-forest-700 hover:bg-forest-50"
+                  >
+                    Review
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-5 py-6 text-center text-sm text-ink-500">No active ingredient rates need review.</p>
+        )}
       </section>
 
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-forest-100 bg-forest-50 px-5 py-4">

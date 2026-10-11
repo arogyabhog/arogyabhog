@@ -61,6 +61,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Products
             </Link>
             <Link
+              href="/admin/ingredients"
+              className="whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold text-ink-700 hover:bg-forest-50 hover:text-forest-800"
+            >
+              Ingredient rates
+            </Link>
+            <Link
+              href="/admin/price-consistency"
+              className="whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold text-ink-700 hover:bg-forest-50 hover:text-forest-800"
+            >
+              Price check
+            </Link>
+            <Link
               href="/admin/audit"
               className="whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold text-ink-700 hover:bg-forest-50 hover:text-forest-800"
             >

@@ -366,3 +366,18 @@ ratio updates preserve the existing ingredient membership and require exactly
 10,000 bps. Fields planned above but absent in the app schema—image URL, SEO,
 best-seller flag, SKU, stock, separate historical ingredient-price rows—must be
 introduced by explicit migration before an admin UI can edit them.
+
+## Implementation alignment note — 2026-10-12 (ingredient pricing, migration 0005)
+
+The current Drizzle schema now includes `ingredient_price_history` snapshots
+(ingredient/store, cost and sell rates in paise, provenance/provisional state,
+actor and timestamp) and `stores.price_consistency_tolerance_bps` (integer bps,
+default 500 = 5%). Migration `0005_nasty_stepford_cuckoos.sql` creates the
+history table/index, adds the store tolerance, and backfills one snapshot for
+existing ingredient rates. Seed logic records baseline snapshots for newly
+seeded ingredients. Admin price updates append history and audit rows; history
+is not edited in place. The checker rebuilds current premade recipe pricing
+including milling, packaging and GST, excluding order-level delivery. The older
+`ingredient_prices` target above describes the intended model; the shipped v1
+schema attaches current per-store rates to ingredients and uses this separate
+history table for snapshots.
