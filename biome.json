@@ -2,7 +2,8 @@
   "files": {
     "includes": [
       "**",
-      "!**/*.css", "!.cache",
+      "!**/*.css",
+      "!.cache",
       "!migrations",
       "!discovery",
       "!package-lock.json",
