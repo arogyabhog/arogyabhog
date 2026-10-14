@@ -2,7 +2,7 @@
 
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
 **Last updated:** 2026-10-12
-**Git SHA:** see `git log` (store-settings feature in progress on a local feature branch; GitHub push remains blocked pending authentication)
+**Git SHA:** `9d0790e` (store-settings feature committed locally; push blocked because the workspace has no GitHub SSH key/remote config)
 **Active branch:** `feat/admin-store-settings` (branched from `feat/admin-ingredient-pricing`; do not merge into `main` yet)
 
 ---
@@ -85,7 +85,7 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Finish and verify `feat/admin-store-settings`: inspect diff, run final checks, commit and push the branch (GitHub SSH authentication currently blocks pushes from this workspace).
+1. Push `feat/admin-store-settings` when GitHub credentials/remote are available; this workspace currently lacks SSH authentication/configuration.
 2. Continue remaining admin scope one feature branch at a time: inventory, coupons/referrals, staff administration, reports, and audit/order hardening. Design and migrate absent schema rather than deferring requirements.
 3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
 4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks. Merge completed feature branches only after verification and approval.
@@ -151,4 +151,4 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 
 22. **2026-10-12 — Admin preview sign-in fix.** Root cause: Arena embeds the app cross-site; default `SameSite=Lax` session cookies were not usable in the iframe. Added opt-in `ARENA_EMBEDDED_PREVIEW=1` to use `SameSite=None; Secure` only for that preview, kept production default `Lax`, and show seed-only staff credentials in that explicit preview mode. Refreshed production preview on port 3000 from the feature branch. With a seeded ADMIN session cookie, authenticated HTTP smoke checks returned 200 and rendered the admin shell on `/admin`, `/admin/ingredients`, and `/admin/price-consistency`; unauthenticated requests redirect to `/login`. CSS/root checks pass. Typecheck, lint, all 133 tests, and build pass; main remains untouched.
 
-23. **2026-10-14 — Admin store settings.** New `feat/admin-store-settings` branch from the local ingredient-pricing feature. Implemented `/admin/settings` with ADMIN store selection and MANAGER assigned-store scope; settings for existing v1 identity/payment/fee/tax/mix/referral/tolerance fields; Zod integer-paise/bps/pack-size validation; transaction + audit before/after + optimistic update guard; and navigation link. No migration, GSTIN/payee/MCC not present and not fabricated. Verification: typecheck, lint, 140/140 tests, production build, authenticated ADMIN and MANAGER HTTP smoke both returned 200 with the settings form. Branch pending diff inspection/commit/push; GitHub push still blocked by missing private key in workspace. Main remains untouched.
+23. **2026-10-14 — Admin store settings.** New `feat/admin-store-settings` branch from the local ingredient-pricing feature. Implemented `/admin/settings` with ADMIN store selection and MANAGER assigned-store scope; settings for existing v1 identity/payment/fee/tax/mix/referral/tolerance fields; Zod integer-paise/bps/pack-size validation; transaction + audit before/after + optimistic update guard; and navigation link. No migration, GSTIN/payee/MCC not present and not fabricated. Verification: typecheck, lint, 140/140 tests, production build, authenticated ADMIN and MANAGER HTTP smoke both returned 200 with the settings form. Commit `9d0790e` created on the branch; explicit push attempted but failed because GitHub SSH authentication is unavailable in the workspace. Main remains untouched.
