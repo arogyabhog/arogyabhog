@@ -177,6 +177,34 @@ describe('frozen snapshot invariants', () => {
     expect(() => assertSnapshotConsistent(goodSnapshot())).not.toThrow();
   });
 
+  it('recalculates GST from the item subtotal after a coupon discount', () => {
+    const subtotalPaise = 62850;
+    const gst = gstSplitInclusive(subtotalPaise, 500);
+    expect(() =>
+      assertSnapshotConsistent(
+        goodSnapshot({
+          coupon: { code: 'SAVE50', type: 'FLAT', discountPaise: 5000 },
+          subtotalPaise,
+          ...gst,
+          totalPaise: subtotalPaise + 5000,
+        }),
+      ),
+    ).not.toThrow();
+  });
+
+  it('validates free-delivery discount against the quoted fee without altering item GST', () => {
+    const snapshot = goodSnapshot({
+      coupon: { code: 'SHIPFREE', type: 'FREE_DELIVERY', discountPaise: 5000 },
+      deliveryPaise: 0,
+      deliveryWaived: true,
+      totalPaise: 67850,
+    });
+    expect(() => assertSnapshotConsistent(snapshot)).not.toThrow();
+    expect(() =>
+      assertSnapshotConsistent({ ...snapshot, coupon: { ...snapshot.coupon!, discountPaise: 4999 } }),
+    ).toThrow();
+  });
+
   const tampers: Array<[string, Partial<OrderSnapshot>]> = [
     [
       'a line price off by 2 paise',

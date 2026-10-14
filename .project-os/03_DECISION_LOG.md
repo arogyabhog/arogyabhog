@@ -844,3 +844,20 @@ real deployment.
 **Context:** The planning schema specifies raw ingredient tracking (C6) and prohibits a mutable on-hand counter. Orders use frozen snapshots and can be cancelled before preparation.
 **Decision:** Add `inventory_movements` with integer signed grams, store/ingredient, reason, optional order/note/actor/time, FK/check constraints and aggregate/history indexes. Derive stock exclusively as the movement sum. Do not backfill or assume opening balances; operators enter a verified count as an adjustment. Show negative stock as a reconciliation warning but do not block checkout until physical opening counts are verified. Freeze ingredient IDs + total grams in new order snapshots. On placement, append one negative reservation per ingredient inside the order/event transaction; for eligible cancellation append matching positive returns in the same transaction, and condition the cancellation update on the prior state to prevent duplicate release. Premade shares use deterministic largest-remainder allocation so integer grams sum to the exact pack weight.
 **Consequences:** New `/admin/inventory` gives scoped balances/history and audited purchase, wastage, and signed adjustment forms. Legacy orders remain outside the ledger; no invented physical count or historical consumption. Down migration is intentionally destructive and documented.
+
+## ADR-039 — Store-scoped coupons and immutable order redemptions
+**Status:** Implemented locally on `feat/admin-coupons` (2026-10-15); verification and commit pending.
+**Implements:** ADR-014, ADR-015, ADR-027, ADR-032.
+
+**Context:** Admins need per-store offers without rewriting past orders or trusting a browser-submitted coupon result. The checkout engine creates one sibling order per cart line, and item prices are GST-inclusive.
+
+**Decision:**
+1. Persist `coupons` per store with normalized unique code, type (`PERCENT`, `FLAT`, `FREE_DELIVERY`), value, minimum item subtotal, optional cap, usage limits, dates, active flag, creator, and creation time. Store isolation is checked server-side in admin actions and checkout.
+2. Use integer paise only. Percent values are basis points; flat values and all caps are paise. Manager-created percent offers are capped at 5,000 bps (50%); manager flat value and per-order cap are limited to ₹50. ADMIN is the owner-controlled exception. These are conservative defaults for the risk left open in ADR-014.
+3. Item coupons reduce the GST-inclusive item subtotal, then GST is recomputed on that discounted subtotal. Free-delivery offers waive only the quoted delivery fee; they do not change item subtotal or GST.
+4. Freeze code/type/discount in both order coupon columns and the immutable `items_snapshot`. Append one `coupon_redemptions` row per coupon/order. The redemption row is never removed; usage counts exclude orders whose fulfillment status is `CANCELLED`. Coupon terms are editable only while there are no non-cancelled redemptions; deactivation remains available at any time.
+5. Checkout re-reads coupon/product/variant/store values server-side. Eligibility and usage capacity are checked for all cart lines before creating orders and rechecked transactionally for each order. Each sibling order consumes one usage, and per-user limits count per order. UI disclosure explains this behavior.
+6. Referral delivery-credit stacking with coupons is not implemented in this slice (despite the broader stacking possibility in ADR-017); the checkout does not offer a combined redemption.
+7. Create, edit, activate, and deactivate actions write before/after audit rows in their transaction. Managers can affect only their assigned store; admins may select any store.
+
+**Consequences:** Migration `0007_moaning_wild_pack.sql` adds coupons, redemptions, and nullable order coupon snapshots without rebuilding legacy orders. The destructive down migration removes all coupon definitions, redemption history, and order coupon fields. Migration application/rollback must be verified before release. Coupon records are retained, never hard-deleted.

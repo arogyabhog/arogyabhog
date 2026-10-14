@@ -87,6 +87,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 ['Raw material / product', order.rawPaise],
                 ['Milling & roasting', order.millingPaise],
                 ['Packaging', order.packagingPaise],
+                ...(order.couponId && order.couponType !== 'FREE_DELIVERY'
+                  ? [[`Coupon ${order.couponCodeUsed ?? ''}`, -order.couponDiscountPaise] as const]
+                  : []),
                 ['Subtotal (GST-inclusive)', order.subtotalPaise],
                 [`CGST ${(order.gstRateBps / 200).toFixed(1)}%`, order.cgstPaise],
                 [`SGST ${(order.gstRateBps / 200).toFixed(1)}%`, order.sgstPaise],
@@ -102,7 +105,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <span>Total</span>
               <span className="tnum">{inr(order.totalPaise)}</span>
             </div>
-            {order.deliveryWaived && <p className="text-xs text-leaf">Delivery waived via referral credit 🎉</p>}
+            {order.couponId && order.couponType === 'FREE_DELIVERY' && (
+              <p className="text-xs text-leaf">
+                Coupon {order.couponCodeUsed} · free delivery −{inr(order.couponDiscountPaise)}
+              </p>
+            )}
+            {order.couponId && order.couponType !== 'FREE_DELIVERY' && (
+              <p className="text-xs text-leaf">
+                Coupon {order.couponCodeUsed} saved {inr(order.couponDiscountPaise)}.
+              </p>
+            )}
+            {order.deliveryWaived && !order.couponId && (
+              <p className="text-xs text-leaf">Delivery waived via referral credit 🎉</p>
+            )}
           </div>
 
           <div className="space-y-3 rounded-card border border-ivory-300 bg-white p-6 shadow-warm">

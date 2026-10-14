@@ -6,10 +6,15 @@ import { getStorefront } from '@/server/storefront-data';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Checkout · ArogyaBhog' };
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function CheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; couponError?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/checkout');
   const { preMades, singles } = await getStorefront();
+  const params = await searchParams;
   return (
     <CheckoutClient
       userName={user.displayName ?? ''}
@@ -18,7 +23,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         name: p.name,
         packs: p.packs,
       }))}
-      failed={(await searchParams).error === '1'}
+      failed={params.error === '1'}
+      couponError={params.couponError ?? ''}
     />
   );
 }

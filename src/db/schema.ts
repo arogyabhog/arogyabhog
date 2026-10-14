@@ -8,7 +8,7 @@
  * in the next increment.
  */
 import { sql } from 'drizzle-orm';
-import { check, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const stores = sqliteTable('stores', {
   id: text('id').primaryKey(),
@@ -54,6 +54,41 @@ export const users = sqliteTable('users', {
     .notNull()
     .$defaultFn(() => Date.now()),
 });
+
+export const coupons = sqliteTable(
+  'coupons',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => stores.id),
+    code: text('code').notNull(),
+    type: text('type').notNull(),
+    /** Percent = basis points; flat = paise; free-delivery = 0. */
+    value: integer('value').notNull(),
+    minOrderPaise: integer('min_order_paise'),
+    maxDiscountPaise: integer('max_discount_paise'),
+    usageLimit: integer('usage_limit'),
+    perUserLimit: integer('per_user_limit'),
+    startsAt: integer('starts_at'),
+    expiresAt: integer('expires_at'),
+    active: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => users.id),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    uniqueIndex('coupons_store_code_unique').on(t.storeId, t.code),
+    check('coupons_type_valid', sql`${t.type} IN ('PERCENT', 'FLAT', 'FREE_DELIVERY')`),
+    check('coupons_value_nonnegative', sql`${t.value} >= 0`),
+    check('coupons_minimum_nonnegative', sql`${t.minOrderPaise} IS NULL OR ${t.minOrderPaise} >= 0`),
+    check('coupons_usage_limit_positive', sql`${t.usageLimit} IS NULL OR ${t.usageLimit} > 0`),
+    check('coupons_per_user_limit_positive', sql`${t.perUserLimit} IS NULL OR ${t.perUserLimit} > 0`),
+  ],
+);
 
 export const ingredients = sqliteTable(
   'ingredients',
@@ -243,6 +278,10 @@ export const orders = sqliteTable(
     fulfillmentStatus: text('fulfillment_status').notNull().default('PLACED'),
     /** Frozen OrderSnapshot JSON (ADR-027 rule 1): lines + every paisa. */
     itemsSnapshot: text('items_snapshot').notNull(),
+    couponId: text('coupon_id').references(() => coupons.id),
+    couponCodeUsed: text('coupon_code_used'),
+    couponType: text('coupon_type'),
+    couponDiscountPaise: integer('coupon_discount_paise').notNull().default(0),
     rawPaise: integer('raw_paise').notNull(),
     millingPaise: integer('milling_paise').notNull(),
     packagingPaise: integer('packaging_paise').notNull(),
@@ -270,6 +309,7 @@ export const orders = sqliteTable(
     check('orders_kind_valid', sql`${t.kind} IN ('LAB', 'PREMADE')`),
     check('orders_payment_method_valid', sql`${t.paymentMethod} IN ('COD', 'UPI_QR')`),
     check('orders_package_count_positive', sql`${t.packageCount} >= 1`),
+    check('orders_coupon_discount_nonnegative', sql`${t.couponDiscountPaise} >= 0`),
   ],
 );
 
@@ -290,6 +330,31 @@ export const orderEvents = sqliteTable('order_events', {
     .notNull()
     .$defaultFn(() => Date.now()),
 });
+
+/** One append-only coupon use per order; cancelled-order uses are excluded by joins to orders. */
+export const couponRedemptions = sqliteTable(
+  'coupon_redemptions',
+  {
+    couponId: text('coupon_id')
+      .notNull()
+      .references(() => coupons.id),
+    orderId: text('order_id')
+      .notNull()
+      .references(() => orders.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    discountPaise: integer('discount_paise').notNull(),
+    redeemedAt: integer('redeemed_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    primaryKey({ columns: [t.couponId, t.orderId] }),
+    check('coupon_redemptions_discount_nonnegative', sql`${t.discountPaise} >= 0`),
+    index('coupon_redemptions_coupon_user').on(t.couponId, t.userId),
+  ],
+);
 
 /** Append-only store raw-material ledger. Current stock is SUM(delta_g), never a mutable counter. */
 export const inventoryMovements = sqliteTable(

@@ -10,8 +10,17 @@ import { eq } from 'drizzle-orm';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { auditLog, inventoryMovements, products, productVariants, users } from '../db/schema';
+import {
+  auditLog,
+  couponRedemptions,
+  coupons,
+  inventoryMovements,
+  products,
+  productVariants,
+  users,
+} from '../db/schema';
 import { SEED_STORE_ID, seedDatabase } from '../db/seed';
+import { CouponError } from '../domain/coupon';
 import { OrderError } from '../domain/order-engine';
 import {
   cancelOrder,
@@ -110,6 +119,15 @@ const codeOf = async (p: Promise<unknown>): Promise<string | null> => {
 
 const creditsOf = async (userId: string) =>
   (await db.select({ c: users.freeDeliveryCredits }).from(users).where(eq(users.id, userId)).get())?.c;
+
+const couponCodeOf = async (p: Promise<unknown>): Promise<string | null> => {
+  try {
+    await p;
+    return null;
+  } catch (error) {
+    return error instanceof CouponError ? error.code : 'NON_COUPON_ERROR';
+  }
+};
 
 describe('lab orders', () => {
   it('freezes the engine goldens plus delivery into the order + snapshot', async () => {
@@ -310,6 +328,70 @@ describe('premade orders', () => {
     expect(await codeOf(createPremadeOrder(db, premadeInput({ productId: 'pr_nope' })))).toBe('VARIANT_NOT_FOUND');
     // tenancy: a valid product id under the WRONG store is simply "not found"
     expect(await codeOf(createPremadeOrder(db, premadeInput({ storeId: 'st_other' })))).toBe('VARIANT_NOT_FOUND');
+  });
+
+  it('freezes an item coupon, records a redemption, and ignores cancelled orders in usage limits', async () => {
+    await db.insert(coupons).values({
+      id: 'cp_order10',
+      storeId: SEED_STORE_ID,
+      code: 'ORDER10',
+      type: 'PERCENT',
+      value: 1000,
+      minOrderPaise: null,
+      maxDiscountPaise: 5000,
+      usageLimit: 2,
+      perUserLimit: 1,
+      startsAt: null,
+      expiresAt: null,
+      active: true,
+      createdBy: 'us_cust_credit',
+    });
+    const first = await createPremadeOrder(db, premadeInput({ userId: 'us_cust_zero', couponCode: 'order10' }));
+    expect(first.snapshot.coupon).toEqual({ code: 'ORDER10', type: 'PERCENT', discountPaise: 5000 });
+    expect(first.snapshot.subtotalPaise).toBe(90000);
+    expect(first.totalPaise).toBe(95000);
+    const row = await getOrder(db, first.orderId);
+    expect(row.couponId).toBe('cp_order10');
+    expect(row.couponDiscountPaise).toBe(5000);
+    expect(
+      await db.select().from(couponRedemptions).where(eq(couponRedemptions.orderId, first.orderId)).all(),
+    ).toHaveLength(1);
+    expect(
+      await couponCodeOf(createPremadeOrder(db, premadeInput({ userId: 'us_cust_zero', couponCode: 'ORDER10' }))),
+    ).toBe('USER_LIMIT');
+
+    await cancelOrder(db, { orderId: first.orderId });
+    const second = await createPremadeOrder(db, premadeInput({ userId: 'us_cust_zero', couponCode: 'ORDER10' }));
+    expect(second.snapshot.coupon?.code).toBe('ORDER10');
+    // The cancellation did not erase its immutable redemption record.
+    expect(
+      await db.select().from(couponRedemptions).where(eq(couponRedemptions.couponId, 'cp_order10')).all(),
+    ).toHaveLength(2);
+  });
+
+  it('free-delivery coupons waive delivery without reducing the GST-inclusive item subtotal', async () => {
+    await db.insert(coupons).values({
+      id: 'cp_shipfree',
+      storeId: SEED_STORE_ID,
+      code: 'SHIPFREE',
+      type: 'FREE_DELIVERY',
+      value: 0,
+      minOrderPaise: null,
+      maxDiscountPaise: null,
+      usageLimit: null,
+      perUserLimit: null,
+      startsAt: null,
+      expiresAt: null,
+      active: true,
+      createdBy: 'us_cust_credit',
+    });
+    const created = await createPremadeOrder(db, premadeInput({ userId: 'us_cust_zero', couponCode: 'SHIPFREE' }));
+    expect(created.snapshot.subtotalPaise).toBe(95000);
+    expect(created.snapshot.deliveryPaise).toBe(0);
+    expect(created.snapshot.deliveryWaived).toBe(true);
+    expect(created.snapshot.totalPaise).toBe(95000);
+    expect(created.snapshot.coupon?.discountPaise).toBe(5000);
+    expect(await creditsOf('us_cust_zero')).toBe(0);
   });
 
   it('refuses checkout of a deactivated product or pack variant', async () => {

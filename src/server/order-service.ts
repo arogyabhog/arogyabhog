@@ -9,10 +9,12 @@
  * until then every entry point takes an explicit actorId.
  */
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, count, eq, ne, sql } from 'drizzle-orm';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import {
   auditLog,
+  couponRedemptions,
+  coupons,
   ingredients,
   inventoryMovements,
   orderEvents,
@@ -23,6 +25,7 @@ import {
   stores,
   users,
 } from '../db/schema';
+import { applyCoupon, type CouponApplication, CouponError, type CouponRule, type CouponType } from '../domain/coupon';
 import { allocateIngredientGrams, type IngredientUsage } from '../domain/inventory';
 import {
   assertFulfillmentTransition,
@@ -67,6 +70,7 @@ export interface CreatePremadeOrderInput {
   contact: ContactBlock;
   paymentMethod: string;
   wantFreeDelivery: boolean;
+  couponCode?: string;
 }
 
 /** Premade snapshots keep the exact-% composition next to the single money line. */
@@ -86,6 +90,14 @@ export interface TransitionInput {
   note?: string;
 }
 
+interface CouponUse {
+  id: string;
+  storeId: string;
+  code: string;
+  userId: string;
+  discountPaise: number;
+}
+
 const newOrderId = () => `od_${Date.now().toString(36)}_${randomUUID().slice(0, 8)}`;
 
 async function creditsFor(db: LibSQLDatabase, userId: string | undefined): Promise<number> {
@@ -100,8 +112,61 @@ async function insertOrderAndEvent(
   event: { actorUserId: string | null; note: string | null },
   creditUserId: string | null,
   ingredientUsage: readonly IngredientUsage[],
+  couponUse: CouponUse | null = null,
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    if (couponUse) {
+      const currentCoupon = await tx.select().from(coupons).where(eq(coupons.id, couponUse.id)).get();
+      const now = Date.now();
+      if (
+        !currentCoupon?.active ||
+        currentCoupon.storeId !== couponUse.storeId ||
+        currentCoupon.code !== couponUse.code ||
+        (currentCoupon.startsAt !== null && currentCoupon.startsAt > now) ||
+        (currentCoupon.expiresAt !== null && currentCoupon.expiresAt < now)
+      ) {
+        throw new CouponError('INACTIVE');
+      }
+      const currentApplication = applyCoupon(currentCoupon as CouponRule, {
+        subtotalPaise: row.rawPaise as number,
+        deliveryFeePaise: row.deliveryFeePaise as number,
+        now,
+      });
+      if (!currentApplication.ok) throw new CouponError(currentApplication.reason);
+      if (
+        currentApplication.application.discountPaise !== couponUse.discountPaise ||
+        currentCoupon.type !== row.couponType ||
+        currentCoupon.code !== row.couponCodeUsed
+      ) {
+        throw new CouponError('TERMS_CHANGED');
+      }
+      const [allUses, userUses] = await Promise.all([
+        tx
+          .select({ n: count() })
+          .from(couponRedemptions)
+          .innerJoin(orders, eq(orders.id, couponRedemptions.orderId))
+          .where(and(eq(couponRedemptions.couponId, couponUse.id), ne(orders.fulfillmentStatus, 'CANCELLED')))
+          .get(),
+        tx
+          .select({ n: count() })
+          .from(couponRedemptions)
+          .innerJoin(orders, eq(orders.id, couponRedemptions.orderId))
+          .where(
+            and(
+              eq(couponRedemptions.couponId, couponUse.id),
+              eq(couponRedemptions.userId, couponUse.userId),
+              ne(orders.fulfillmentStatus, 'CANCELLED'),
+            ),
+          )
+          .get(),
+      ]);
+      if (currentCoupon.usageLimit !== null && (allUses?.n ?? 0) >= currentCoupon.usageLimit) {
+        throw new CouponError('USAGE_LIMIT');
+      }
+      if (currentCoupon.perUserLimit !== null && (userUses?.n ?? 0) >= currentCoupon.perUserLimit) {
+        throw new CouponError('USER_LIMIT');
+      }
+    }
     await tx.insert(orders).values(row);
     await tx.insert(orderEvents).values({
       orderId: row.id as string,
@@ -122,6 +187,14 @@ async function insertOrderAndEvent(
           actorUserId: event.actorUserId,
         })),
       );
+    }
+    if (couponUse) {
+      await tx.insert(couponRedemptions).values({
+        couponId: couponUse.id,
+        orderId: row.id as string,
+        userId: couponUse.userId,
+        discountPaise: couponUse.discountPaise,
+      });
     }
     if (creditUserId) {
       await tx
@@ -262,14 +335,46 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
     .all();
 
   const raw = variant.sellPaise * packageCount; // shelf price is all-inclusive (ADR-027 rule 1/6)
-  const gst = gstSplitInclusive(raw, store.gstRateBps);
+  const couponCode = input.couponCode?.trim().toUpperCase() || null;
+  let couponUse: CouponUse | null = null;
+  let couponApplication: CouponApplication | null = null;
+  let couponType: CouponType | null = null;
+  if (couponCode) {
+    if (!input.userId) throw new CouponError('ACCOUNT_REQUIRED');
+    const coupon = await db
+      .select()
+      .from(coupons)
+      .where(and(eq(coupons.storeId, product.storeId), eq(coupons.code, couponCode)))
+      .get();
+    if (!coupon) throw new CouponError('NOT_FOUND');
+    couponType = coupon.type as CouponType;
+    const calculated = applyCoupon(coupon as CouponRule, {
+      subtotalPaise: raw,
+      deliveryFeePaise: store.deliveryFeePaise,
+    });
+    if (!calculated.ok) throw new CouponError(calculated.reason);
+    couponApplication = calculated.application;
+    couponUse = {
+      id: coupon.id,
+      storeId: coupon.storeId,
+      code: coupon.code,
+      userId: input.userId,
+      discountPaise: calculated.application.discountPaise,
+    };
+  }
+  const itemDiscountPaise = couponApplication?.itemDiscountPaise ?? 0;
+  const netSubtotalPaise = raw - itemDiscountPaise;
+  const gst = gstSplitInclusive(netSubtotalPaise, store.gstRateBps);
   const creditsAvailable = await creditsFor(db, input.userId);
-  const delivery = decideDelivery({
-    subtotalPaise: raw,
-    deliveryFeePaise: store.deliveryFeePaise,
-    wantFreeDelivery: input.wantFreeDelivery,
-    creditsAvailable,
-  });
+  const delivery =
+    couponType === 'FREE_DELIVERY'
+      ? { deliveryPaise: 0, deliveryWaived: true, totalPaise: netSubtotalPaise }
+      : decideDelivery({
+          subtotalPaise: netSubtotalPaise,
+          deliveryFeePaise: store.deliveryFeePaise,
+          wantFreeDelivery: input.wantFreeDelivery,
+          creditsAvailable,
+        });
 
   const snapshot: PremadeSnapshot = {
     kind: 'PREMADE',
@@ -282,6 +387,9 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
       ingredientId: line.ingredientId,
       grams: line.grams,
     })),
+    ...(couponUse && couponType
+      ? { coupon: { code: couponUse.code, type: couponType, discountPaise: couponUse.discountPaise } }
+      : {}),
     lines: [
       {
         name: `${product.name} · ${input.packSizeG / 1000} kg pouch${packageCount > 1 ? ` ×${packageCount}` : ''}`,
@@ -293,7 +401,7 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
     rawPaise: raw,
     millingPaise: 0,
     packagingPaise: 0,
-    subtotalPaise: raw,
+    subtotalPaise: netSubtotalPaise,
     gstRateBps: store.gstRateBps,
     ...gst,
     deliveryFeePaise: store.deliveryFeePaise,
@@ -319,10 +427,14 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
       ...input.contact,
       paymentMethod: input.paymentMethod,
       itemsSnapshot: JSON.stringify(snapshot),
+      couponId: couponUse?.id ?? null,
+      couponCodeUsed: couponUse?.code ?? null,
+      couponType,
+      couponDiscountPaise: couponUse?.discountPaise ?? 0,
       rawPaise: raw,
       millingPaise: 0,
       packagingPaise: 0,
-      subtotalPaise: raw,
+      subtotalPaise: netSubtotalPaise,
       gstRateBps: store.gstRateBps,
       gstPaise: gst.gstPaise,
       cgstPaise: gst.cgstPaise,
@@ -336,10 +448,18 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
     },
     {
       actorUserId: input.userId ?? null,
-      note: delivery.deliveryWaived ? 'free-delivery credit redeemed' : null,
+      note:
+        couponType === 'FREE_DELIVERY'
+          ? `free-delivery coupon ${couponUse?.code ?? ''} applied`
+          : delivery.deliveryWaived
+            ? 'free-delivery credit redeemed'
+            : couponUse
+              ? `coupon ${couponUse.code} applied`
+              : null,
     },
-    delivery.deliveryWaived && input.userId ? input.userId : null,
+    delivery.deliveryWaived && couponType !== 'FREE_DELIVERY' && input.userId ? input.userId : null,
     snapshot.ingredientUsage ?? [],
+    couponUse,
   );
   return { orderId, snapshot, totalPaise: delivery.totalPaise, deliveryWaived: delivery.deliveryWaived };
 }

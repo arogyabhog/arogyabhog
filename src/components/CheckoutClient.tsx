@@ -16,10 +16,12 @@ export function CheckoutClient({
   products,
   userName,
   failed,
+  couponError,
 }: {
   products: ProductRef[];
   userName: string;
   failed: boolean;
+  couponError: string;
 }) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [payment, setPayment] = useState<'COD' | 'UPI_QR'>('COD');
@@ -156,6 +158,34 @@ export function CheckoutClient({
           </div>
 
           <div className="space-y-6">
+            <div className="space-y-3 rounded-card border border-ivory-300 bg-white p-6 shadow-warm">
+              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-forest-700">Coupon</div>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-bold text-ink-900">Offer code</span>
+                <input
+                  name="couponCode"
+                  maxLength={32}
+                  autoCapitalize="characters"
+                  placeholder="Enter code (optional)"
+                  className="w-full rounded-ctrl border border-ivory-300 bg-ivory-50 px-3 py-2.5 text-sm font-semibold uppercase text-ink-900 focus:border-forest-600 focus:outline-none"
+                />
+              </label>
+              <p className="text-xs leading-5 text-ink-500">
+                A coupon is validated at checkout and applied once to each cart line/order. Multiple lines create
+                sibling orders and use one redemption per order; referral-credit stacking is not currently available.
+              </p>
+              {couponError && (
+                <p role="alert" className="rounded-ctrl bg-danger-soft px-3 py-2 text-xs font-bold text-danger">
+                  {couponError === 'NOT_FOUND'
+                    ? 'Coupon not found for this store.'
+                    : couponError === 'MINIMUM_NOT_MET'
+                      ? 'The order minimum for this coupon is not met on every line.'
+                      : couponError === 'USAGE_LIMIT' || couponError === 'USER_LIMIT'
+                        ? 'This coupon has reached its usage limit.'
+                        : 'This coupon is not currently valid. Check the code and try again.'}
+                </p>
+              )}
+            </div>
             <div className="space-y-4 rounded-card border border-ivory-300 bg-white p-6 shadow-warm">
               <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-forest-700">Payment</div>
               <label className="flex cursor-pointer items-start gap-3">

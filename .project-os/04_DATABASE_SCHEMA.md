@@ -413,3 +413,9 @@ reconstructed as verified physical inventory. See ADR-038.
 
 Rollback: `0006_burly_arclight.down.sql` drops both indexes and the ledger table;
 this is destructive to all recorded inventory movement history.
+
+## Implementation alignment note — 2026-10-15 (store-scoped coupons, migration 0007)
+
+The implemented SQLite/Drizzle v1 adds `coupons` (unique `(store_id, code)`, type/value, optional minimum/cap/usage limits/date window, active flag and creator), `coupon_redemptions` (append-only composite key `(coupon_id, order_id)`, user, integer-paise discount and redemption time), and nullable coupon id/code/type plus a nonnegative integer discount on `orders`. New order snapshots also freeze the code/type/discount. Migration `0007_moaning_wild_pack.sql` adds the coupon tables and uses nullable `ALTER TABLE ... ADD COLUMN` statements for order fields to avoid rebuilding legacy orders. Its down migration is destructive: it removes all coupon definitions/redemptions and order snapshots; applying and rollback were exercised in in-memory SQLite.
+
+Eligibility is checked against DB state at checkout and again in the order-creation transaction. Usage counts are per order (thus per sibling cart line) and ignore cancelled orders; redemption rows themselves are retained. Item discounts reduce the GST-inclusive subtotal before GST is recomputed; free delivery only waives delivery. Admin/manager create, edit (only with no non-cancelled redemption), activate and deactivate actions are store-scoped and audited. Managers are capped at 50% percentage discount and ₹50 flat/per-order cap; ADMIN is the owner exception. Referral-credit stacking remains unimplemented. See ADR-039.

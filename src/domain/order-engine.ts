@@ -200,6 +200,8 @@ export interface OrderSnapshot {
   ratesProvisional: boolean;
   /** Exact ingredient grams reserved at placement; kept in the frozen order snapshot. */
   ingredientUsage?: Array<{ ingredientId: string; grams: number }>;
+  /** Coupon terms and discount as used at placement, immutable with the order. */
+  coupon?: { code: string; type: 'PERCENT' | 'FLAT' | 'FREE_DELIVERY'; discountPaise: number };
   /** LAB only: provenance per ADR-007, frozen with the order. */
   nutritionSources?: string[];
 }
@@ -222,14 +224,24 @@ export function assertSnapshotConsistent(s: OrderSnapshot): void {
   }
   const linesSum = s.lines.reduce((a, l) => a + BigInt(l.linePaise), 0n);
   if (linesSum !== BigInt(s.rawPaise)) bad(`Σ linePaise (${linesSum}) ≠ rawPaise (${s.rawPaise})`);
-  if (BigInt(s.rawPaise) + BigInt(s.millingPaise) + BigInt(s.packagingPaise) !== BigInt(s.subtotalPaise)) {
-    bad('raw + milling + packaging ≠ subtotal');
+  const itemDiscountPaise = s.coupon?.type === 'FREE_DELIVERY' ? 0 : (s.coupon?.discountPaise ?? 0);
+  if (s.coupon && (!Number.isSafeInteger(s.coupon.discountPaise) || s.coupon.discountPaise < 0)) {
+    bad('coupon discount must be a nonnegative integer');
+  }
+  if (
+    BigInt(s.rawPaise) + BigInt(s.millingPaise) + BigInt(s.packagingPaise) - BigInt(itemDiscountPaise) !==
+    BigInt(s.subtotalPaise)
+  ) {
+    bad('raw + milling + packaging − item coupon discount ≠ subtotal');
+  }
+  if (s.coupon?.type === 'FREE_DELIVERY' && s.coupon.discountPaise !== s.deliveryFeePaise) {
+    bad('free-delivery coupon discount must equal the quoted delivery fee');
   }
   const gst = gstSplitInclusive(s.subtotalPaise, s.gstRateBps);
   if (gst.gstPaise !== s.gstPaise || gst.cgstPaise !== s.cgstPaise || gst.sgstPaise !== s.sgstPaise) {
     bad('GST split does not match the inclusive-subtotal formula');
   }
-  const expectedDelivery = s.deliveryWaived ? 0 : s.deliveryFeePaise;
+  const expectedDelivery = s.coupon?.type === 'FREE_DELIVERY' || s.deliveryWaived ? 0 : s.deliveryFeePaise;
   if (s.deliveryPaise !== expectedDelivery) bad('deliveryPaise disagrees with deliveryWaived');
   if (BigInt(s.subtotalPaise) + BigInt(s.deliveryPaise) !== BigInt(s.totalPaise)) bad('subtotal + delivery ≠ total');
 }

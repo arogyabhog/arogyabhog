@@ -1,9 +1,9 @@
 # 01 — CURRENT STATE
 
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
-**Last updated:** 2026-10-14
-**Git SHA:** `b9a201f` (inventory feature committed locally; push failed because GitHub SSH key is unavailable)
-**Active branch:** `feat/admin-inventory` (branched from `feat/admin-store-settings`; do not merge into `main` yet)
+**Last updated:** 2026-10-15
+**Git SHA:** `b9a201f` (inventory parent commit; coupon feature is uncommitted on the current branch)
+**Active branch:** `feat/admin-coupons` (branched from `feat/admin-inventory`; do not merge into `main` yet)
 
 ---
 
@@ -18,13 +18,13 @@
 | Pricing model | ✅ DECIDED — admin sets 18 rates by hand + mandatory Price Consistency Checker (ADR-008) |
 | Referral system | ✅ DECIDED — credits on first DELIVERED order, cap 10, referee bonus (ADR-017) |
 | Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
-| Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0006; ingredient price history, price tolerance, and append-only raw inventory ledger |
+| Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0007; ingredient price history, price tolerance, append-only inventory ledger, store coupons, redemption ledger, and order coupon snapshots |
 | API / server boundaries | ✅ Mix calculation API, Zod validation, and authenticated checkout/order server actions implemented |
 | **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 157 project tests currently green |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | 🟡 Storefront/checkout + admin shell/order queue/catalog editor, ingredient pricing, price consistency, dashboard review queue, store settings, and raw inventory ledger implemented; coupons/referrals, staff, reports, and audit/order hardening remain |
+| UI layer | 🟡 Storefront/checkout + admin shell/order queue/catalog editor, ingredient pricing, price consistency, dashboard review queue, store settings, raw inventory, and coupons implemented on feature branches; referrals, staff administration, reports, and remaining audit/order hardening remain |
 
 ---
 
@@ -64,7 +64,7 @@ post-launch data, not now.
 | Ingredient selling rates (18 values) | Do not exist yet — client must supply |
 | Methi Seeds cost | Missing from source data — treated as a data gap, NOT as ₹0 |
 | Nutrition for 4 ingredients | USDA FoodData Central fallback, provenance-tagged |
-| Manager coupon limits | Assume discount capped, no admin approval needed — confirm |
+| Manager coupon limits | Resolved for v1 in ADR-039: ≤50% percent and ₹50 flat/per-order cap; ADMIN exception |
 | Minimum order value | None |
 | Free delivery threshold | None (referral credits only) |
 | Auth method | Email + password (SMS OTP costs money per message) |
@@ -154,3 +154,5 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 23. **2026-10-14 — Admin store settings.** New `feat/admin-store-settings` branch from the local ingredient-pricing feature. Implemented `/admin/settings` with ADMIN store selection and MANAGER assigned-store scope; settings for existing v1 identity/payment/fee/tax/mix/referral/tolerance fields; Zod integer-paise/bps/pack-size validation; transaction + audit before/after + optimistic update guard; and navigation link. No migration, GSTIN/payee/MCC not present and not fabricated. Verification: typecheck, lint, 140/140 tests, production build, authenticated ADMIN and MANAGER HTTP smoke both returned 200 with the settings form. Commit `9d0790e` created on the branch; explicit push attempted but failed because GitHub SSH authentication is unavailable in the workspace. Main remains untouched.
 
 24. **2026-10-14 — Admin raw inventory slice in progress.** New `feat/admin-inventory` branch from local `feat/admin-store-settings`. Added migration 0006 + destructive down migration, append-only stock movement ledger, derived on-hand balances, store-scoped purchase/wastage/adjustment UI and audit transactions. Orders now freeze exact ingredient grams; placement writes negative movement rows atomically; cancellation appends matching return rows, guarded against a duplicate concurrent cancellation. Largest-remainder integer allocation and order snapshot usage invariants are tested. No opening balance is fabricated; negative stock is visible but does not block orders until counts are verified. Typecheck, lint, all 157 tests, and build passed; authenticated inventory route smoke rendered the movement form; fresh migrations passed through order-service integration tests. Commit `b9a201f` created on the branch; explicit push attempted and failed with `Permission denied (publickey)` because the workspace has no SSH private key. Main untouched.
+
+25. **2026-10-15 — Store-scoped coupons in progress.** New `feat/admin-coupons` branch from inventory. Added migration 0007 (coupon definitions, append-only per-order redemptions, frozen order coupon columns), integer-paise percent/flat/free-delivery calculations, manager caps (≤50% and ₹50 flat/cap; admin is exception), admin create/edit/deactivate with audit + manager store scope, checkout validation per sibling order with usage limits excluding cancellations, order/receipt discount and GST snapshots. Item discounts reduce the GST-inclusive item subtotal before GST is recalculated. Referral-credit stacking remains unavailable. Multi-line cart disclosure explains one redemption per sibling order. Fixed the generated SQLite rebuild issue by using nullable `ALTER TABLE ... ADD COLUMN` for the new order snapshot columns. Tested full migration application and destructive rollback via SQLite. Verification: typecheck, lint, all 175 tests, production build, Drizzle migration check, migration application + destructive rollback in SQLite, and authenticated ADMIN/MANAGER `/admin/coupons` HTTP smoke (200) pass. Build retains the known unrelated seed filesystem-tracing warning. Browser automation could not run because Playwright Chromium is absent. No coupon commit/push; main remains untouched.
