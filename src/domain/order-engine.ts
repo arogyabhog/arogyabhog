@@ -198,6 +198,8 @@ export interface OrderSnapshot {
   deliveryWaived: boolean;
   totalPaise: number;
   ratesProvisional: boolean;
+  /** Exact ingredient grams reserved at placement; kept in the frozen order snapshot. */
+  ingredientUsage?: Array<{ ingredientId: string; grams: number }>;
   /** LAB only: provenance per ADR-007, frozen with the order. */
   nutritionSources?: string[];
 }
@@ -208,6 +210,16 @@ export function assertSnapshotConsistent(s: OrderSnapshot): void {
     throw new OrderError('SNAPSHOT_INCONSISTENT', `Snapshot is inconsistent: ${why}`, { why });
   };
   if (s.packageCount < 1 || !Number.isInteger(s.packageCount)) bad('packageCount must be a positive integer');
+  if (s.ingredientUsage !== undefined) {
+    const ids = s.ingredientUsage.map((line) => line.ingredientId);
+    if (ids.length === 0 || new Set(ids).size !== ids.length) bad('ingredientUsage must have unique ingredient IDs');
+    if (s.ingredientUsage.some((line) => !Number.isSafeInteger(line.grams) || line.grams < 1)) {
+      bad('ingredientUsage grams must be positive safe integers');
+    }
+    const usageSum = s.ingredientUsage.reduce((sum, line) => sum + BigInt(line.grams), 0n);
+    if (usageSum !== BigInt(s.packSizeG) * BigInt(s.packageCount))
+      bad('ingredientUsage must equal pack weight × package count');
+  }
   const linesSum = s.lines.reduce((a, l) => a + BigInt(l.linePaise), 0n);
   if (linesSum !== BigInt(s.rawPaise)) bad(`Σ linePaise (${linesSum}) ≠ rawPaise (${s.rawPaise})`);
   if (BigInt(s.rawPaise) + BigInt(s.millingPaise) + BigInt(s.packagingPaise) !== BigInt(s.subtotalPaise)) {

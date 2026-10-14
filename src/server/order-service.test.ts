@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle, type LibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { auditLog, products, productVariants, users } from '../db/schema';
+import { auditLog, inventoryMovements, products, productVariants, users } from '../db/schema';
 import { SEED_STORE_ID, seedDatabase } from '../db/seed';
 import { OrderError } from '../domain/order-engine';
 import {
@@ -134,6 +134,17 @@ describe('lab orders', () => {
     const snap = JSON.parse(row.itemsSnapshot) as PremadeSnapshot;
     expect(snap.lines.reduce((a, l) => a + l.linePaise, 0)).toBe(88550);
     expect(snap.nutritionSources).toContain('IFCT2017');
+    expect(snap.ingredientUsage?.reduce((sum, line) => sum + line.grams, 0)).toBe(10000);
+    const stockMovements = await db
+      .select()
+      .from(inventoryMovements)
+      .where(eq(inventoryMovements.orderId, created.orderId))
+      .all();
+    expect(stockMovements).toHaveLength(snap.ingredientUsage?.length ?? 0);
+    expect(stockMovements.every((movement) => movement.reason === 'CONSUMED_BY_ORDER' && movement.deltaG < 0)).toBe(
+      true,
+    );
+    expect(stockMovements.reduce((sum, movement) => sum + movement.deltaG, 0)).toBe(-10000);
     const events = await listOrderEvents(db, created.orderId);
     expect(events[0]?.action).toBe('CREATED');
   });
@@ -212,6 +223,18 @@ describe('fulfilment lifecycle', () => {
     expect(await creditsOf('us_cust_cancel')).toBe(1); // refunded
     const events = await listOrderEvents(db, orderId);
     expect(events.some((e) => e.action === 'CREDIT_REFUND')).toBe(true);
+    const stockMovements = await db
+      .select()
+      .from(inventoryMovements)
+      .where(eq(inventoryMovements.orderId, orderId))
+      .all();
+    expect(stockMovements.filter((movement) => movement.reason === 'CONSUMED_BY_ORDER')).toHaveLength(
+      everydayItems.length,
+    );
+    expect(stockMovements.filter((movement) => movement.reason === 'RETURN_TO_STOCK')).toHaveLength(
+      everydayItems.length,
+    );
+    expect(stockMovements.reduce((sum, movement) => sum + movement.deltaG, 0)).toBe(0);
     expect(await codeOf(cancelOrder(db, { orderId }))).toBe('ORDER_IMMUTABLE');
   });
 
@@ -262,12 +285,26 @@ describe('premade orders', () => {
     expect(snap.lines).toHaveLength(1); // ONE money line — no fabricated per-ingredient prices
     expect(snap.lines[0]?.displayPercent).toBe('100.00%');
     expect(snap.composition.reduce((a, c) => a + c.bps, 0)).toBe(10000); // exact-% still travels with the order
+    expect(snap.ingredientUsage?.reduce((sum, line) => sum + line.grams, 0)).toBe(10000);
+    const movements = await db
+      .select()
+      .from(inventoryMovements)
+      .where(eq(inventoryMovements.orderId, created.orderId))
+      .all();
+    expect(movements.reduce((sum, movement) => sum + movement.deltaG, 0)).toBe(-10000);
   });
 
   it('scales by package count and refuses invalid variants or tenancy', async () => {
     const two = await createPremadeOrder(db, premadeInput({ packageCount: 2 }));
     expect(two.snapshot.rawPaise).toBe(190000);
     expect(two.totalPaise).toBe(195000);
+    expect(two.snapshot.ingredientUsage?.reduce((sum, line) => sum + line.grams, 0)).toBe(20000);
+    const movements = await db
+      .select()
+      .from(inventoryMovements)
+      .where(eq(inventoryMovements.orderId, two.orderId))
+      .all();
+    expect(movements.reduce((sum, movement) => sum + movement.deltaG, 0)).toBe(-20000);
     expect(await codeOf(createPremadeOrder(db, premadeInput({ packageCount: 0 })))).toBe('INVALID_QUANTITY');
     expect(await codeOf(createPremadeOrder(db, premadeInput({ packSizeG: 7000 })))).toBe('VARIANT_NOT_FOUND');
     expect(await codeOf(createPremadeOrder(db, premadeInput({ productId: 'pr_nope' })))).toBe('VARIANT_NOT_FOUND');

@@ -291,5 +291,37 @@ export const orderEvents = sqliteTable('order_events', {
     .$defaultFn(() => Date.now()),
 });
 
+/** Append-only store raw-material ledger. Current stock is SUM(delta_g), never a mutable counter. */
+export const inventoryMovements = sqliteTable(
+  'inventory_movements',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => stores.id),
+    ingredientId: text('ingredient_id')
+      .notNull()
+      .references(() => ingredients.id),
+    /** Positive = stock received/returned; negative = consumed/wasted. */
+    deltaG: integer('delta_g').notNull(),
+    reason: text('reason').notNull(),
+    orderId: text('order_id').references(() => orders.id),
+    note: text('note'),
+    actorUserId: text('actor_user_id').references(() => users.id),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    check('inventory_movements_nonzero_delta', sql`${t.deltaG} <> 0`),
+    check(
+      'inventory_movements_reason_valid',
+      sql`${t.reason} IN ('PURCHASE', 'CONSUMED_BY_ORDER', 'WASTAGE', 'ADJUSTMENT', 'RETURN_TO_STOCK')`,
+    ),
+    index('inventory_movements_store_ingredient_time').on(t.storeId, t.ingredientId, t.createdAt),
+    index('inventory_movements_order').on(t.orderId),
+  ],
+);
+
 export type OrderRow = typeof orders.$inferSelect;
 export type OrderEventRow = typeof orderEvents.$inferSelect;

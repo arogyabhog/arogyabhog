@@ -392,3 +392,24 @@ audit before/after snapshot and optimistic `updated_at` guard. ADMIN can select
 any store; MANAGER can only edit its assigned store. No migration is required.
 The target-schema fields `gstin`, `upi_payee_name`, and `upi_mcc` remain absent
 from v1 and are intentionally not invented in this feature.
+
+## Implementation alignment note — 2026-10-14 (raw ingredient inventory)
+
+Migration `0006_burly_arclight.sql` adds `inventory_movements`: append-only,
+store/ingredient-scoped signed gram deltas, reason, optional order/note/actor,
+creation time, FK/check constraints and indexes for stock aggregation/history.
+On-hand = `SUM(delta_g)` grouped by store and ingredient. No physical opening
+balance is fabricated; the operator must enter a verified opening count as an
+`ADJUSTMENT`. Negative totals remain visible as a reconciliation warning and do
+not block checkout while no verified starting counts exist.
+
+New order snapshots carry `ingredientUsage` (ingredient ID + total grams for all
+pouches). Premade recipe weights use deterministic largest-remainder apportioning
+to conserve every gram. Order placement writes negative `CONSUMED_BY_ORDER`
+movements in the same transaction as order/events; cancellation before preparation
+appends equal positive `RETURN_TO_STOCK` rows in the cancellation transaction.
+Historical orders are not backfilled because their stock consumption cannot be
+reconstructed as verified physical inventory. See ADR-038.
+
+Rollback: `0006_burly_arclight.down.sql` drops both indexes and the ledger table;
+this is destructive to all recorded inventory movement history.

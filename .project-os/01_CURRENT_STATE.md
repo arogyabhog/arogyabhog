@@ -1,9 +1,9 @@
 # 01 — CURRENT STATE
 
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
-**Last updated:** 2026-10-12
-**Git SHA:** `9d0790e` (store-settings feature committed locally; push blocked because the workspace has no GitHub SSH key/remote config)
-**Active branch:** `feat/admin-store-settings` (branched from `feat/admin-ingredient-pricing`; do not merge into `main` yet)
+**Last updated:** 2026-10-14
+**Git SHA:** see `git log` (inventory feature verified; latest work is committed locally when clean)
+**Active branch:** `feat/admin-inventory` (branched from `feat/admin-store-settings`; do not merge into `main` yet)
 
 ---
 
@@ -18,13 +18,13 @@
 | Pricing model | ✅ DECIDED — admin sets 18 rates by hand + mandatory Price Consistency Checker (ADR-008) |
 | Referral system | ✅ DECIDED — credits on first DELIVERED order, cap 10, referee bonus (ADR-017) |
 | Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
-| Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0005; ingredient price history and per-store consistency tolerance added |
+| Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0006; ingredient price history, price tolerance, and append-only raw inventory ledger |
 | API / server boundaries | ✅ Mix calculation API, Zod validation, and authenticated checkout/order server actions implemented |
-| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 140 project tests currently green |
+| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 157 project tests currently green |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | 🟡 Storefront/checkout + admin shell/order queue/catalog editor, ingredient rate history/editor, price consistency checker, dashboard review queue, and store settings implemented; inventory, coupons/referrals, staff, reports, and audit/order hardening remain |
+| UI layer | 🟡 Storefront/checkout + admin shell/order queue/catalog editor, ingredient pricing, price consistency, dashboard review queue, store settings, and raw inventory ledger implemented; coupons/referrals, staff, reports, and audit/order hardening remain |
 
 ---
 
@@ -85,8 +85,8 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Push `feat/admin-store-settings` when GitHub credentials/remote are available; this workspace currently lacks SSH authentication/configuration.
-2. Continue remaining admin scope one feature branch at a time: inventory, coupons/referrals, staff administration, reports, and audit/order hardening. Design and migrate absent schema rather than deferring requirements.
+1. Finish and verify `feat/admin-inventory`, inspect and commit; attempt push after restoring GitHub SSH credentials/remote configuration.
+2. Continue remaining admin scope one feature branch at a time: coupons/referrals, staff administration, reports, and audit/order hardening. Design and migrate absent schema rather than deferring requirements.
 3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
 4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks. Merge completed feature branches only after verification and approval.
 
@@ -152,3 +152,5 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 22. **2026-10-12 — Admin preview sign-in fix.** Root cause: Arena embeds the app cross-site; default `SameSite=Lax` session cookies were not usable in the iframe. Added opt-in `ARENA_EMBEDDED_PREVIEW=1` to use `SameSite=None; Secure` only for that preview, kept production default `Lax`, and show seed-only staff credentials in that explicit preview mode. Refreshed production preview on port 3000 from the feature branch. With a seeded ADMIN session cookie, authenticated HTTP smoke checks returned 200 and rendered the admin shell on `/admin`, `/admin/ingredients`, and `/admin/price-consistency`; unauthenticated requests redirect to `/login`. CSS/root checks pass. Typecheck, lint, all 133 tests, and build pass; main remains untouched.
 
 23. **2026-10-14 — Admin store settings.** New `feat/admin-store-settings` branch from the local ingredient-pricing feature. Implemented `/admin/settings` with ADMIN store selection and MANAGER assigned-store scope; settings for existing v1 identity/payment/fee/tax/mix/referral/tolerance fields; Zod integer-paise/bps/pack-size validation; transaction + audit before/after + optimistic update guard; and navigation link. No migration, GSTIN/payee/MCC not present and not fabricated. Verification: typecheck, lint, 140/140 tests, production build, authenticated ADMIN and MANAGER HTTP smoke both returned 200 with the settings form. Commit `9d0790e` created on the branch; explicit push attempted but failed because GitHub SSH authentication is unavailable in the workspace. Main remains untouched.
+
+24. **2026-10-14 — Admin raw inventory slice in progress.** New `feat/admin-inventory` branch from local `feat/admin-store-settings`. Added migration 0006 + destructive down migration, append-only stock movement ledger, derived on-hand balances, store-scoped purchase/wastage/adjustment UI and audit transactions. Orders now freeze exact ingredient grams; placement writes negative movement rows atomically; cancellation appends matching return rows, guarded against a duplicate concurrent cancellation. Largest-remainder integer allocation and order snapshot usage invariants are tested. No opening balance is fabricated; negative stock is visible but does not block orders until counts are verified. Typecheck, lint, all 157 tests, and build passed; authenticated inventory route smoke rendered the movement form; fresh migrations passed through order-service integration tests. Commit and push this branch; GitHub SSH auth is unavailable in the workspace. Main untouched.

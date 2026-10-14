@@ -14,6 +14,7 @@ import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import {
   auditLog,
   ingredients,
+  inventoryMovements,
   orderEvents,
   orders,
   productRecipeLines,
@@ -22,6 +23,7 @@ import {
   stores,
   users,
 } from '../db/schema';
+import { allocateIngredientGrams, type IngredientUsage } from '../domain/inventory';
 import {
   assertFulfillmentTransition,
   assertPaymentMethod,
@@ -97,6 +99,7 @@ async function insertOrderAndEvent(
   row: typeof orders.$inferInsert,
   event: { actorUserId: string | null; note: string | null },
   creditUserId: string | null,
+  ingredientUsage: readonly IngredientUsage[],
 ): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.insert(orders).values(row);
@@ -107,6 +110,19 @@ async function insertOrderAndEvent(
       toStatus: 'PLACED',
       note: event.note,
     });
+    if (ingredientUsage.length > 0) {
+      await tx.insert(inventoryMovements).values(
+        ingredientUsage.map((usage) => ({
+          storeId: row.storeId as string,
+          ingredientId: usage.ingredientId,
+          deltaG: -usage.grams,
+          reason: 'CONSUMED_BY_ORDER',
+          orderId: row.id as string,
+          note: 'Reserved for the placed order',
+          actorUserId: event.actorUserId,
+        })),
+      );
+    }
     if (creditUserId) {
       await tx
         .update(users)
@@ -136,6 +152,10 @@ export async function createLabOrder(db: LibSQLDatabase, input: CreateLabOrderIn
     kind: 'LAB',
     packSizeG: input.mix.targetWeightG,
     packageCount: input.mix.packageCount,
+    ingredientUsage: calc.mix.composition.map((line) => ({
+      ingredientId: line.ingredientId,
+      grams: line.weightG * input.mix.packageCount,
+    })),
     lines: calc.mix.composition.map((c) => ({
       name: c.name,
       weightG: c.weightG,
@@ -193,6 +213,7 @@ export async function createLabOrder(db: LibSQLDatabase, input: CreateLabOrderIn
       note: delivery.deliveryWaived ? 'free-delivery credit redeemed' : null,
     },
     delivery.deliveryWaived && input.userId ? input.userId : null,
+    snapshot.ingredientUsage ?? [],
   );
   return { orderId, snapshot, totalPaise: snapshot.totalPaise, deliveryWaived: snapshot.deliveryWaived };
 }
@@ -234,7 +255,7 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
   }
 
   const recipe = await db
-    .select({ name: ingredients.name, bps: productRecipeLines.ratioBps })
+    .select({ ingredientId: ingredients.id, name: ingredients.name, bps: productRecipeLines.ratioBps })
     .from(productRecipeLines)
     .innerJoin(ingredients, eq(ingredients.id, productRecipeLines.ingredientId))
     .where(eq(productRecipeLines.productId, product.id))
@@ -254,6 +275,13 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
     kind: 'PREMADE',
     packSizeG: input.packSizeG,
     packageCount,
+    ingredientUsage: allocateIngredientGrams(
+      input.packSizeG * packageCount,
+      recipe.map((line) => ({ ingredientId: line.ingredientId, ratioBps: line.bps })),
+    ).map((line) => ({
+      ingredientId: line.ingredientId,
+      grams: line.grams,
+    })),
     lines: [
       {
         name: `${product.name} · ${input.packSizeG / 1000} kg pouch${packageCount > 1 ? ` ×${packageCount}` : ''}`,
@@ -311,6 +339,7 @@ export async function createPremadeOrder(db: LibSQLDatabase, input: CreatePremad
       note: delivery.deliveryWaived ? 'free-delivery credit redeemed' : null,
     },
     delivery.deliveryWaived && input.userId ? input.userId : null,
+    snapshot.ingredientUsage ?? [],
   );
   return { orderId, snapshot, totalPaise: delivery.totalPaise, deliveryWaived: delivery.deliveryWaived };
 }
@@ -405,10 +434,17 @@ export async function cancelOrder(db: LibSQLDatabase, input: Omit<TransitionInpu
 
   const refundUserId = order.deliveryWaived ? order.userId : null;
   await db.transaction(async (tx) => {
-    await tx
+    const updateResult = await tx
       .update(orders)
       .set({ fulfillmentStatus: 'CANCELLED', updatedAt: Date.now() })
-      .where(eq(orders.id, order.id));
+      .where(and(eq(orders.id, order.id), eq(orders.fulfillmentStatus, from)))
+      .run();
+    if (updateResult.rowsAffected !== 1) {
+      throw new OrderError('ILLEGAL_FULFILLMENT_TRANSITION', 'Order changed while cancellation was being applied.', {
+        from,
+        to: 'CANCELLED',
+      });
+    }
     await tx.insert(orderEvents).values({
       orderId: order.id,
       actorUserId: input.actorId ?? null,
@@ -417,6 +453,24 @@ export async function cancelOrder(db: LibSQLDatabase, input: Omit<TransitionInpu
       toStatus: 'CANCELLED',
       note: input.note ?? null,
     });
+    const reservedStock = await tx
+      .select()
+      .from(inventoryMovements)
+      .where(and(eq(inventoryMovements.orderId, order.id), eq(inventoryMovements.reason, 'CONSUMED_BY_ORDER')))
+      .all();
+    if (reservedStock.length > 0) {
+      await tx.insert(inventoryMovements).values(
+        reservedStock.map((movement) => ({
+          storeId: movement.storeId,
+          ingredientId: movement.ingredientId,
+          deltaG: -movement.deltaG,
+          reason: 'RETURN_TO_STOCK',
+          orderId: order.id,
+          note: 'Order cancelled before preparation; stock reservation released',
+          actorUserId: input.actorId ?? null,
+        })),
+      );
+    }
     if (refundUserId) {
       // ADR-027 rule 5: cancellation refunds the redeemed credit.
       await tx

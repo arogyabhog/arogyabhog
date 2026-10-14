@@ -150,6 +150,11 @@ function goodSnapshot(over: Partial<OrderSnapshot> = {}): OrderSnapshot {
     kind: 'LAB',
     packSizeG: 10000,
     packageCount: 1,
+    ingredientUsage: [
+      { ingredientId: 'RM-001', grams: 7500 },
+      { ingredientId: 'RM-004', grams: 1000 },
+      { ingredientId: 'RM-014', grams: 1500 },
+    ],
     lines,
     rawPaise: raw,
     millingPaise: 4000,
@@ -187,6 +192,25 @@ describe('frozen snapshot invariants', () => {
     ['total off by the delivery fee', { totalPaise: 67850 }],
     ['zero packages', { packageCount: 0 }],
     ['fractional packages', { packageCount: 1.5 }],
+    ['inventory usage not matching pack weight', { ingredientUsage: [{ ingredientId: 'RM-001', grams: 9999 }] }],
+    [
+      'duplicate inventory ingredient ids',
+      {
+        ingredientUsage: [
+          { ingredientId: 'RM-001', grams: 5000 },
+          { ingredientId: 'RM-001', grams: 5000 },
+        ],
+      },
+    ],
+    [
+      'zero-gram inventory line',
+      {
+        ingredientUsage: [
+          { ingredientId: 'RM-001', grams: 0 },
+          { ingredientId: 'RM-002', grams: 10000 },
+        ],
+      },
+    ],
   ];
   for (const [label, over] of tampers) {
     it(`refuses ${label}`, () => {
