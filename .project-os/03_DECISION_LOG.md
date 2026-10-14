@@ -832,3 +832,9 @@ session cookie `SameSite=None; Secure`; production/default remains `Lax`. Admin
 access still requires an ADMIN or MANAGER account. Preview login displays the
 seed-only staff credentials; never enable this flag or seed credentials in a
 real deployment.
+
+## ADR-037 — Admin store settings stay within existing store schema
+**Status:** Implemented on `feat/admin-store-settings` (2026-10-14).
+**Context:** Operators need per-store control of fees, tax, mix constraints, referral policy and price-check tolerance. The full planning schema mentions fields not present in the shipped v1 `stores` table (notably GSTIN and UPI payee/MCC).
+**Decision:** Expose only persisted v1 fields: name/city, UPI VPA, delivery/packaging/milling fees, GST bps, allowed Lab pack sizes, minimum base-grain bps, referral cap/bonus, and price-check tolerance. ADMIN selects a store; MANAGER is restricted to their assigned store. Validate paise as integer rupee conversions, basis points/credit counts as bounded integers, and pack sizes from the established mix-size set. Save + before/after audit atomically, with an `updated_at` optimistic-concurrency check. Do not add guessed GSTIN/payee/MCC fields or change store activation status without an explicit data/workflow requirement.
+**Consequences:** No schema migration. Existing order snapshots remain immutable; changed store defaults apply to subsequent calculations/orders. Store scope is enforced in the action, not trusted from the selector.

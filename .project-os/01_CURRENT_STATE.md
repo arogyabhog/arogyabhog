@@ -2,8 +2,8 @@
 
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
 **Last updated:** 2026-10-12
-**Git SHA:** `eff8ddb` (ingredient pricing feature committed locally; push blocked pending GitHub authentication)
-**Active branch:** `feat/admin-ingredient-pricing` (branched from `feat/admin-catalog`; do not merge into `main` yet)
+**Git SHA:** see `git log` (store-settings feature in progress on a local feature branch; GitHub push remains blocked pending authentication)
+**Active branch:** `feat/admin-store-settings` (branched from `feat/admin-ingredient-pricing`; do not merge into `main` yet)
 
 ---
 
@@ -20,11 +20,11 @@
 | Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
 | Database schema | ✅ Implemented — Drizzle schema + migrations 0000–0005; ingredient price history and per-store consistency tolerance added |
 | API / server boundaries | ✅ Mix calculation API, Zod validation, and authenticated checkout/order server actions implemented |
-| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 133 project tests currently green |
+| **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 140 project tests currently green |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | 🟡 Storefront/checkout + admin shell/order queue/catalog editor complete; ingredient rate history/editor, price consistency checker, and dashboard rate-review queue implemented; store settings and remaining admin modules pending |
+| UI layer | 🟡 Storefront/checkout + admin shell/order queue/catalog editor, ingredient rate history/editor, price consistency checker, dashboard review queue, and store settings implemented; inventory, coupons/referrals, staff, reports, and audit/order hardening remain |
 
 ---
 
@@ -85,8 +85,8 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Finish and verify `feat/admin-ingredient-pricing`: dashboard rate-review queue, update schema documentation/decision log, run lint/typecheck/tests/build and smoke checks; inspect diff before commit/push.
-2. Continue the complete admin-panel scope one feature branch at a time: store settings, inventory, coupons/referrals, staff administration, reports, and audit/order hardening. Design and migrate any absent schema; do not defer for missing schema.
+1. Finish and verify `feat/admin-store-settings`: inspect diff, run final checks, commit and push the branch (GitHub SSH authentication currently blocks pushes from this workspace).
+2. Continue remaining admin scope one feature branch at a time: inventory, coupons/referrals, staff administration, reports, and audit/order hardening. Design and migrate absent schema rather than deferring requirements.
 3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
 4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks. Merge completed feature branches only after verification and approval.
 
@@ -150,3 +150,5 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 21. **2026-10-12 — Ingredient pricing and consistency feature in progress.** On `feat/admin-ingredient-pricing` based on catalog branch. Added `ingredient_price_history`, per-store 500 bps tolerance, migration 0005 and existing-rate backfill; baseline seed snapshots; transactional, store-scoped audited integer-paise rate editor with per-ingredient history; recipe rebuild consistency checker (raw rates + milling + packaging + GST, no order delivery); and dashboard provisional-rate count/worklist. Provisional rates require review regardless of variance. Verification: typecheck, Biome, all 133 tests, production build, fresh local migration+seed, and `git diff --check` passed. Build retains the known seed filesystem-tracing warning. Commit `eff8ddb` created locally. Push attempted after GitHub host verification setup but failed because no private deploy key is present in this workspace (`Permission denied (publickey)`); do not generate another key. No merge to main.
 
 22. **2026-10-12 — Admin preview sign-in fix.** Root cause: Arena embeds the app cross-site; default `SameSite=Lax` session cookies were not usable in the iframe. Added opt-in `ARENA_EMBEDDED_PREVIEW=1` to use `SameSite=None; Secure` only for that preview, kept production default `Lax`, and show seed-only staff credentials in that explicit preview mode. Refreshed production preview on port 3000 from the feature branch. With a seeded ADMIN session cookie, authenticated HTTP smoke checks returned 200 and rendered the admin shell on `/admin`, `/admin/ingredients`, and `/admin/price-consistency`; unauthenticated requests redirect to `/login`. CSS/root checks pass. Typecheck, lint, all 133 tests, and build pass; main remains untouched.
+
+23. **2026-10-14 — Admin store settings.** New `feat/admin-store-settings` branch from the local ingredient-pricing feature. Implemented `/admin/settings` with ADMIN store selection and MANAGER assigned-store scope; settings for existing v1 identity/payment/fee/tax/mix/referral/tolerance fields; Zod integer-paise/bps/pack-size validation; transaction + audit before/after + optimistic update guard; and navigation link. No migration, GSTIN/payee/MCC not present and not fabricated. Verification: typecheck, lint, 140/140 tests, production build, authenticated ADMIN and MANAGER HTTP smoke both returned 200 with the settings form. Branch pending diff inspection/commit/push; GitHub push still blocked by missing private key in workspace. Main remains untouched.

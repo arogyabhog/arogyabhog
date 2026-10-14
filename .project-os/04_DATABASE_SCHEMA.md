@@ -381,3 +381,14 @@ including milling, packaging and GST, excluding order-level delivery. The older
 `ingredient_prices` target above describes the intended model; the shipped v1
 schema attaches current per-store rates to ingredients and uses this separate
 history table for snapshots.
+
+## Implementation alignment note — 2026-10-14 (admin store settings)
+
+`/admin/settings` edits the existing v1 `stores` columns only: `name`, `city`,
+`upi_vpa`, delivery/packaging/milling fees, `gst_rate_bps`,
+`allowed_pack_sizes_g`, `min_base_grain_bps`, referral cap/bonus and
+`price_consistency_tolerance_bps`. Settings writes are transactional with an
+audit before/after snapshot and optimistic `updated_at` guard. ADMIN can select
+any store; MANAGER can only edit its assigned store. No migration is required.
+The target-schema fields `gstin`, `upi_payee_name`, and `upi_mcc` remain absent
+from v1 and are intentionally not invented in this feature.
