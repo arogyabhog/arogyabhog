@@ -2,7 +2,7 @@
 
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
 **Last updated:** 2026-10-14
-**Git SHA:** see `git log` (inventory feature verified; latest work is committed locally when clean)
+**Git SHA:** `b9a201f` (inventory feature committed locally; push failed because GitHub SSH key is unavailable)
 **Active branch:** `feat/admin-inventory` (branched from `feat/admin-store-settings`; do not merge into `main` yet)
 
 ---
@@ -85,7 +85,7 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Finish and verify `feat/admin-inventory`, inspect and commit; attempt push after restoring GitHub SSH credentials/remote configuration.
+1. Push `feat/admin-inventory` when GitHub SSH credentials are available; the branch is committed locally and remains unmerged.
 2. Continue remaining admin scope one feature branch at a time: coupons/referrals, staff administration, reports, and audit/order hardening. Design and migrate absent schema rather than deferring requirements.
 3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
 4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks. Merge completed feature branches only after verification and approval.
@@ -153,4 +153,4 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 
 23. **2026-10-14 — Admin store settings.** New `feat/admin-store-settings` branch from the local ingredient-pricing feature. Implemented `/admin/settings` with ADMIN store selection and MANAGER assigned-store scope; settings for existing v1 identity/payment/fee/tax/mix/referral/tolerance fields; Zod integer-paise/bps/pack-size validation; transaction + audit before/after + optimistic update guard; and navigation link. No migration, GSTIN/payee/MCC not present and not fabricated. Verification: typecheck, lint, 140/140 tests, production build, authenticated ADMIN and MANAGER HTTP smoke both returned 200 with the settings form. Commit `9d0790e` created on the branch; explicit push attempted but failed because GitHub SSH authentication is unavailable in the workspace. Main remains untouched.
 
-24. **2026-10-14 — Admin raw inventory slice in progress.** New `feat/admin-inventory` branch from local `feat/admin-store-settings`. Added migration 0006 + destructive down migration, append-only stock movement ledger, derived on-hand balances, store-scoped purchase/wastage/adjustment UI and audit transactions. Orders now freeze exact ingredient grams; placement writes negative movement rows atomically; cancellation appends matching return rows, guarded against a duplicate concurrent cancellation. Largest-remainder integer allocation and order snapshot usage invariants are tested. No opening balance is fabricated; negative stock is visible but does not block orders until counts are verified. Typecheck, lint, all 157 tests, and build passed; authenticated inventory route smoke rendered the movement form; fresh migrations passed through order-service integration tests. Commit and push this branch; GitHub SSH auth is unavailable in the workspace. Main untouched.
+24. **2026-10-14 — Admin raw inventory slice in progress.** New `feat/admin-inventory` branch from local `feat/admin-store-settings`. Added migration 0006 + destructive down migration, append-only stock movement ledger, derived on-hand balances, store-scoped purchase/wastage/adjustment UI and audit transactions. Orders now freeze exact ingredient grams; placement writes negative movement rows atomically; cancellation appends matching return rows, guarded against a duplicate concurrent cancellation. Largest-remainder integer allocation and order snapshot usage invariants are tested. No opening balance is fabricated; negative stock is visible but does not block orders until counts are verified. Typecheck, lint, all 157 tests, and build passed; authenticated inventory route smoke rendered the movement form; fresh migrations passed through order-service integration tests. Commit `b9a201f` created on the branch; explicit push attempted and failed with `Permission denied (publickey)` because the workspace has no SSH private key. Main untouched.
