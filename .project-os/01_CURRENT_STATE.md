@@ -2,8 +2,8 @@
 
 **Phase:** 3 — VERTICAL SLICE (storefront/checkout implemented; completing the admin panel)
 **Last updated:** 2026-10-15
-**Merged feature:** coupons + verified dependencies fast-forward merged into `main` at `45740a5`
-**Active branch:** `feat/admin-referrals` (commit `4739dba` pushed to origin; verified locally and awaiting user review; not merged)
+**Merged features:** coupons/dependency stack (`45740a5`) and referrals (`f349509`), both pushed to `origin/main`
+**Active branch:** `main` (referrals merged; clean working tree)
 
 ---
 
@@ -18,13 +18,13 @@
 | Pricing model | ✅ DECIDED — admin sets 18 rates by hand + mandatory Price Consistency Checker (ADR-008) |
 | Referral system | ✅ DECIDED — credits on first DELIVERED order, cap 10, referee bonus (ADR-017) |
 | Pack sizes | ✅ DECIDED — standard 10/15/20 kg; mix 5/10/15/20 kg (ADR-021) |
-| Database schema | 🟡 Implemented through migrations 0008–0009 on `feat/admin-referrals`; includes referral ledger, hashed first-party signup token, and atomic per-store lifetime award counter |
+| Database schema | 🟡 Implemented through migrations 0008–0009 on `main`; includes referral ledger, hashed first-party signup token, and atomic per-store lifetime award counter |
 | API / server boundaries | ✅ Mix calculation API, Zod validation, and authenticated checkout/order server actions implemented |
 | **Calculation engine** | ✅ **BUILT & VERIFIED** — property-based suites and client-sheet regression cases; 180 project tests currently green |
 | Toolchain | ✅ INSTALLED — exact-pinned TS 5.6.3, Vitest 2.1.9, fast-check 3.23.2, Zod 3.24.1 |
 | Brand / logo / theme | ✅ **APPROVED** — heritage-premium direction (ADR-022); tokens binding for UI work |
 | Hosting stack | ✅ **DECIDED — Bundle A**: Netlify Starter + Neon Free + Resend (ADR-023); Drizzle confirmed as data layer (ADR-024). Documented exit path = Bundle C (own VPS) |
-| UI layer | 🟡 Storefront/checkout + admin operations, catalog, pricing, inventory, coupons implemented and merged; referral customer/account, checkout stacking, and read-only admin review are implemented on the active branch; staff administration, reports, and remaining audit/order hardening remain |
+| UI layer | 🟡 Storefront/checkout + admin operations, catalog, pricing, inventory, coupons, and referrals implemented and merged; staff administration, reports, and remaining audit/order hardening remain |
 
 ---
 
@@ -85,10 +85,9 @@ post-launch data, not now.
 
 ## NEXT ACTIONS (in order)
 
-1. Review `feat/admin-referrals` (commit `4739dba`) and explicitly approve before any merge; the branch is already pushed and verified.
-2. After review/merge approval, continue remaining admin scope one feature branch at a time: staff administration, reports, and audit/order hardening. Design and migrate absent schema rather than deferring requirements.
-3. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
-4. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks. Merge completed feature branches only after verification and approval.
+1. Start the next admin feature on a separate branch from updated `main`: staff administration, reports, or audit/order hardening; design and migrate absent schema rather than deferring requirements.
+2. Confirm real ingredient rates, merchant UPI VPA, tax treatment, and disease-adjacent naming with the client/CA.
+3. Resolve the production database adapter/configuration, deploy to staging, and run end-to-end admin/order checks. Merge completed feature branches only after verification and approval.
 
 ## DELIBERATELY DEFERRED
 
@@ -157,4 +156,4 @@ Returns/refunds, payment gateways, WhatsApp/SMS, marketplaces, and multi-city ph
 
 25. **2026-10-15 — Store-scoped coupons in progress.** New `feat/admin-coupons` branch from inventory. Added migration 0007 (coupon definitions, append-only per-order redemptions, frozen order coupon columns), integer-paise percent/flat/free-delivery calculations, manager caps (≤50% and ₹50 flat/cap; admin is exception), admin create/edit/deactivate with audit + manager store scope, checkout validation per sibling order with usage limits excluding cancellations, order/receipt discount and GST snapshots. Item discounts reduce the GST-inclusive item subtotal before GST is recalculated. Referral-credit stacking remains unavailable. Multi-line cart disclosure explains one redemption per sibling order. Fixed the generated SQLite rebuild issue by using nullable `ALTER TABLE ... ADD COLUMN` for the new order snapshot columns. Tested full migration application and destructive rollback via SQLite. Verification: typecheck, lint, all 175 tests, production build, Drizzle migration check, migration application + destructive rollback in SQLite, and authenticated ADMIN/MANAGER `/admin/coupons` HTTP smoke (200) pass. Build retains the known unrelated seed filesystem-tracing warning. Browser automation could not run because Playwright Chromium is absent; authenticated HTTP smoke was verified using scoped test sessions. Feature commit `a2e3fbd` and follow-up docs commits were pushed to `origin/feat/admin-coupons` after the new ED25519 deploy key was authorized. After verification, the complete feature ancestry was fast-forward merged into `main` at `45740a5` and pushed to `origin/main`. This brought the dependency stack (order operations, dashboard, catalog, ingredient pricing, store settings, inventory and coupons) onto main. Next work is a separate referrals branch; main is now up to date.
 
-26. **2026-10-15 — Referrals in progress on `feat/admin-referrals`.** Branch created from updated `main`; user selected a random first-party browser token stored only as SHA-256 for a review-only repeat-signup signal (no fingerprinting/IP capture; disclosed at signup). Added migrations 0008–0009 for a store-scoped referrals ledger plus atomic per-referrer/per-store lifetime award counter; transactional signup attribution and first-delivered-order credit awarding; cap and CAS/idempotence guards; credit stacking with item coupons at checkout, one credit per sibling order; free-delivery coupon exclusion and cancellation-refund correction; customer referral code/balance display; and store-scoped admin referral review with no-order/device signals. Verification: typecheck, lint, 180 tests, production build, Drizzle check, fresh SQLite application and rollback of migrations 0008–0009, and authenticated ADMIN/MANAGER route smoke pass. Commit `4739dba` is pushed to `origin/feat/admin-referrals`; branch awaits user review/approval and is not merged. Existing unrelated seed tracing build warning remains.
+26. **2026-10-15 — Referrals in progress on `feat/admin-referrals`.** Branch created from updated `main`; user selected a random first-party browser token stored only as SHA-256 for a review-only repeat-signup signal (no fingerprinting/IP capture; disclosed at signup). Added migrations 0008–0009 for a store-scoped referrals ledger plus atomic per-referrer/per-store lifetime award counter; transactional signup attribution and first-delivered-order credit awarding; cap and CAS/idempotence guards; credit stacking with item coupons at checkout, one credit per sibling order; free-delivery coupon exclusion and cancellation-refund correction; customer referral code/balance display; and store-scoped admin referral review with no-order/device signals. Verification: typecheck, lint, 180 tests, production build, Drizzle check, fresh SQLite application and rollback of migrations 0008–0009, and authenticated ADMIN/MANAGER route smoke pass. Feature commit `4739dba` plus docs commit `f349509` are fast-forward merged and pushed to `origin/main`. Existing unrelated seed tracing build warning remains.
