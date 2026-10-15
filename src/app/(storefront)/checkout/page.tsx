@@ -9,7 +9,7 @@ export const metadata = { title: 'Checkout · ArogyaBhog' };
 export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; couponError?: string }>;
+  searchParams: Promise<{ error?: string; couponError?: string; creditError?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login?next=/checkout');
@@ -18,6 +18,7 @@ export default async function CheckoutPage({
   return (
     <CheckoutClient
       userName={user.displayName ?? ''}
+      availableReferralCredits={user.freeDeliveryCredits}
       products={[...singles, ...preMades].map((p) => ({
         slug: p.slug,
         name: p.name,
@@ -25,6 +26,7 @@ export default async function CheckoutPage({
       }))}
       failed={params.error === '1'}
       couponError={params.couponError ?? ''}
+      creditError={params.creditError ?? ''}
     />
   );
 }

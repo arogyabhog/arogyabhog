@@ -9,7 +9,7 @@
  * until then every entry point takes an explicit actorId.
  */
 import { randomUUID } from 'node:crypto';
-import { and, asc, count, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gt, lt, ne, sql } from 'drizzle-orm';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import {
   auditLog,
@@ -22,6 +22,8 @@ import {
   productRecipeLines,
   products,
   productVariants,
+  referralCreditAccounts,
+  referrals,
   stores,
   users,
 } from '../db/schema';
@@ -197,10 +199,16 @@ async function insertOrderAndEvent(
       });
     }
     if (creditUserId) {
-      await tx
+      const creditUpdate = await tx
         .update(users)
         .set({ freeDeliveryCredits: sql`${users.freeDeliveryCredits} - 1` })
-        .where(eq(users.id, creditUserId));
+        .where(and(eq(users.id, creditUserId), gt(users.freeDeliveryCredits, 0)))
+        .run();
+      if (creditUpdate.rowsAffected !== 1) {
+        throw new OrderError('CREDIT_NOT_AVAILABLE', 'The free-delivery credit was already redeemed.', {
+          userId: creditUserId,
+        });
+      }
     }
   });
 }
@@ -495,7 +503,17 @@ export async function transitionFulfillment(db: LibSQLDatabase, input: Transitio
   assertFulfillmentTransition(from, to, { paymentStatus: asPayment(order.paymentStatus) });
 
   await db.transaction(async (tx) => {
-    await tx.update(orders).set({ fulfillmentStatus: to, updatedAt: Date.now() }).where(eq(orders.id, order.id));
+    const transition = await tx
+      .update(orders)
+      .set({ fulfillmentStatus: to, updatedAt: Date.now() })
+      .where(and(eq(orders.id, order.id), eq(orders.fulfillmentStatus, from)))
+      .run();
+    if (transition.rowsAffected !== 1) {
+      throw new OrderError('ILLEGAL_FULFILLMENT_TRANSITION', 'Order changed while the transition was being applied.', {
+        from,
+        to,
+      });
+    }
     await tx.insert(orderEvents).values({
       orderId: order.id,
       actorUserId: input.actorId ?? null,
@@ -512,9 +530,120 @@ export async function transitionFulfillment(db: LibSQLDatabase, input: Transitio
       beforeJson: JSON.stringify({ fulfillmentStatus: from }),
       afterJson: JSON.stringify({ fulfillmentStatus: to }),
     });
-    // ADR-017 hook: when `to === 'DELIVERED'`, referral awarding lands here
-    // (referee's first delivery → referrer +1 credit, cap per store config).
-    // Deliberately NOT implemented until the signup/referral slice exists.
+
+    if (to === 'DELIVERED' && order.userId) {
+      const referral = await tx
+        .select()
+        .from(referrals)
+        .where(and(eq(referrals.refereeUserId, order.userId), eq(referrals.status, 'PENDING')))
+        .get();
+      if (referral) {
+        const [referrer, store] = await Promise.all([
+          tx.select().from(users).where(eq(users.id, referral.referrerUserId)).get(),
+          tx.select().from(stores).where(eq(stores.id, order.storeId)).get(),
+        ]);
+        let creditAwarded = false;
+        let awardSlotClaimed = false;
+        if (referrer && store) {
+          await tx
+            .insert(referralCreditAccounts)
+            .values({ storeId: order.storeId, userId: referrer.id, awardsCount: 0 })
+            .onConflictDoNothing()
+            .run();
+          const awardSlot = await tx
+            .update(referralCreditAccounts)
+            .set({ awardsCount: sql`${referralCreditAccounts.awardsCount} + 1`, updatedAt: Date.now() })
+            .where(
+              and(
+                eq(referralCreditAccounts.storeId, order.storeId),
+                eq(referralCreditAccounts.userId, referrer.id),
+                lt(referralCreditAccounts.awardsCount, store.referralCreditCap),
+              ),
+            )
+            .run();
+          awardSlotClaimed = awardSlot.rowsAffected === 1;
+          if (awardSlotClaimed) {
+            const creditUpdate = await tx
+              .update(users)
+              .set({ freeDeliveryCredits: sql`${users.freeDeliveryCredits} + 1` })
+              .where(eq(users.id, referrer.id))
+              .run();
+            creditAwarded = creditUpdate.rowsAffected === 1;
+            if (!creditAwarded) {
+              await tx
+                .update(referralCreditAccounts)
+                .set({ awardsCount: sql`${referralCreditAccounts.awardsCount} - 1` })
+                .where(
+                  and(
+                    eq(referralCreditAccounts.storeId, order.storeId),
+                    eq(referralCreditAccounts.userId, referrer.id),
+                  ),
+                );
+            }
+          }
+        }
+        const status = creditAwarded ? 'CREDITED' : 'CAPPED';
+        const referralUpdate = await tx
+          .update(referrals)
+          .set({
+            status,
+            storeId: order.storeId,
+            creditedOrderId: order.id,
+            creditAwarded,
+            updatedAt: Date.now(),
+          })
+          .where(and(eq(referrals.id, referral.id), eq(referrals.status, 'PENDING')))
+          .run();
+        if (referralUpdate.rowsAffected !== 1) {
+          if (awardSlotClaimed && referrer) {
+            await tx
+              .update(referralCreditAccounts)
+              .set({ awardsCount: sql`${referralCreditAccounts.awardsCount} - 1` })
+              .where(
+                and(eq(referralCreditAccounts.storeId, order.storeId), eq(referralCreditAccounts.userId, referrer.id)),
+              );
+            if (creditAwarded) {
+              await tx
+                .update(users)
+                .set({ freeDeliveryCredits: sql`${users.freeDeliveryCredits} - 1` })
+                .where(eq(users.id, referrer.id));
+            }
+          }
+          return;
+        }
+        {
+          const action = creditAwarded ? 'REFERRAL_CREDIT_AWARDED' : 'REFERRAL_CREDIT_CAPPED';
+          const after = {
+            status,
+            creditedOrderId: order.id,
+            creditAwarded,
+            referrerUserId: referral.referrerUserId,
+            refereeUserId: referral.refereeUserId,
+            storeId: order.storeId,
+            creditsBefore: referrer?.freeDeliveryCredits ?? null,
+            creditsAfter: creditAwarded
+              ? (referrer?.freeDeliveryCredits ?? 0) + 1
+              : (referrer?.freeDeliveryCredits ?? null),
+          };
+          await tx.insert(orderEvents).values({
+            orderId: order.id,
+            actorUserId: input.actorId ?? null,
+            action: 'REFERRAL_REWARD',
+            note: creditAwarded
+              ? 'Referrer earned one free-delivery credit.'
+              : 'Referral delivered; referrer credit cap already reached.',
+          });
+          await tx.insert(auditLog).values({
+            actorUserId: input.actorId ?? null,
+            action,
+            entityType: 'referral',
+            entityId: referral.id,
+            beforeJson: JSON.stringify({ status: 'PENDING', creditAwarded: false }),
+            afterJson: JSON.stringify(after),
+          });
+        }
+      }
+    }
   });
   return { ...order, fulfillmentStatus: to };
 }
@@ -552,7 +681,7 @@ export async function cancelOrder(db: LibSQLDatabase, input: Omit<TransitionInpu
   const from = asFulfillment(order.fulfillmentStatus);
   assertFulfillmentTransition(from, 'CANCELLED', { paymentStatus: asPayment(order.paymentStatus) });
 
-  const refundUserId = order.deliveryWaived ? order.userId : null;
+  const refundUserId = order.deliveryWaived && order.couponType !== 'FREE_DELIVERY' ? order.userId : null;
   await db.transaction(async (tx) => {
     const updateResult = await tx
       .update(orders)

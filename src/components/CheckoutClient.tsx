@@ -17,11 +17,15 @@ export function CheckoutClient({
   userName,
   failed,
   couponError,
+  creditError,
+  availableReferralCredits,
 }: {
   products: ProductRef[];
   userName: string;
   failed: boolean;
   couponError: string;
+  creditError: string;
+  availableReferralCredits: number;
 }) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [payment, setPayment] = useState<'COD' | 'UPI_QR'>('COD');
@@ -40,6 +44,7 @@ export function CheckoutClient({
     })
     .filter((x) => x !== null);
   const total = enriched.reduce((a, l) => a + l.pack.sellPaise * l.qty, 0);
+  const maxReferralCredits = Math.min(Math.max(0, availableReferralCredits), enriched.length);
 
   const setQty = (slug: string, packG: number, qty: number) => {
     const next = getCart()
@@ -171,8 +176,8 @@ export function CheckoutClient({
                 />
               </label>
               <p className="text-xs leading-5 text-ink-500">
-                A coupon is validated at checkout and applied once to each cart line/order. Multiple lines create
-                sibling orders and use one redemption per order; referral-credit stacking is not currently available.
+                Multiple cart lines create sibling orders. Coupons redeem once per order; item discounts may stack with
+                delivery credits, while a free-delivery coupon already waives the fee and won’t consume a credit.
               </p>
               {couponError && (
                 <p role="alert" className="rounded-ctrl bg-danger-soft px-3 py-2 text-xs font-bold text-danger">
@@ -183,6 +188,35 @@ export function CheckoutClient({
                       : couponError === 'USAGE_LIMIT' || couponError === 'USER_LIMIT'
                         ? 'This coupon has reached its usage limit.'
                         : 'This coupon is not currently valid. Check the code and try again.'}
+                </p>
+              )}
+              <label className="block space-y-1.5">
+                <span className="text-sm font-bold text-ink-900">
+                  Use delivery credits ({availableReferralCredits} available)
+                </span>
+                <select
+                  name="referralCreditsToUse"
+                  defaultValue="0"
+                  className="w-full rounded-ctrl border border-ivory-300 bg-ivory-50 px-3 py-2.5 text-sm font-semibold text-ink-900"
+                >
+                  {Array.from({ length: maxReferralCredits + 1 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i} credit{i === 1 ? '' : 's'}
+                    </option>
+                  ))}
+                </select>
+                <span className="block text-xs leading-5 text-ink-500">
+                  Each credit waives delivery for one order, applied to the first selected cart lines. Choose zero to
+                  save them.
+                </span>
+              </label>
+              {creditError && (
+                <p role="alert" className="rounded-ctrl bg-danger-soft px-3 py-2 text-xs font-bold text-danger">
+                  {creditError === 'NO_CREDITS'
+                    ? 'Not enough delivery credits for that selection. Refresh and try again.'
+                    : creditError === 'FREE_DELIVERY_COUPON'
+                      ? 'Delivery credits cannot be combined with a free-delivery coupon.'
+                      : 'Choose a valid number of delivery credits.'}
                 </p>
               )}
             </div>

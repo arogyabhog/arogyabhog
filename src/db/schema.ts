@@ -3,9 +3,9 @@
  * dialect swap per ADR-004/019/024). Integer discipline (R1) everywhere:
  * money in paise, weights in grams, ratios in basis points, nutrients ×100.
  *
- * Vertical-slice subset of `.project-os/04_DATABASE_SCHEMA.md`: everything the
- * Lab calculate endpoint and premade PDPs need. Orders/payments/referrals land
- * in the next increment.
+ * Implemented v1 slice of `.project-os/04_DATABASE_SCHEMA.md`: storefront,
+ * auth, orders, admin operations, inventory, coupons, and referrals. Schema
+ * changes ship through explicit SQLite-compatible Drizzle migrations.
  */
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
@@ -353,6 +353,71 @@ export const couponRedemptions = sqliteTable(
     primaryKey({ columns: [t.couponId, t.orderId] }),
     check('coupon_redemptions_discount_nonnegative', sql`${t.discountPaise} >= 0`),
     index('coupon_redemptions_coupon_user').on(t.couponId, t.userId),
+  ],
+);
+
+/** Referral attribution and first-delivery reward outcome; never hard-deleted. */
+export const referrals = sqliteTable(
+  'referrals',
+  {
+    id: text('id').primaryKey(),
+    storeId: text('store_id')
+      .notNull()
+      .references(() => stores.id),
+    referrerUserId: text('referrer_user_id')
+      .notNull()
+      .references(() => users.id),
+    refereeUserId: text('referee_user_id')
+      .notNull()
+      .references(() => users.id),
+    referralCode: text('referral_code').notNull(),
+    status: text('status').notNull().default('PENDING'),
+    /** Random first-party browser token, SHA-256 hashed; used only as a review signal. */
+    signupDeviceHash: text('signup_device_hash'),
+    creditedOrderId: text('credited_order_id').references(() => orders.id),
+    creditAwarded: integer('credit_awarded', { mode: 'boolean' }).notNull().default(false),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    uniqueIndex('referrals_referee_unique').on(t.refereeUserId),
+    uniqueIndex('referrals_credited_order_unique').on(t.creditedOrderId),
+    index('referrals_store_status_time').on(t.storeId, t.status, t.createdAt),
+    index('referrals_device_store').on(t.storeId, t.signupDeviceHash),
+    check('referrals_status_valid', sql`${t.status} IN ('PENDING', 'CREDITED', 'CAPPED')`),
+    check('referrals_not_self', sql`${t.referrerUserId} <> ${t.refereeUserId}`),
+    check(
+      'referrals_state_consistent',
+      sql`(${t.status} = 'PENDING' AND ${t.creditedOrderId} IS NULL AND ${t.creditAwarded} = 0) OR (${t.status} = 'CREDITED' AND ${t.creditedOrderId} IS NOT NULL AND ${t.creditAwarded} = 1) OR (${t.status} = 'CAPPED' AND ${t.creditedOrderId} IS NOT NULL AND ${t.creditAwarded} = 0)`,
+    ),
+  ],
+);
+
+/** Atomic per-store lifetime referral-award cap; detailed immutable outcomes remain in referrals. */
+export const referralCreditAccounts = sqliteTable(
+  'referral_credit_accounts',
+  {
+    storeId: text('store_id')
+      .notNull()
+      .references(() => stores.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    awardsCount: integer('awards_count').notNull().default(0),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+  },
+  (t) => [
+    primaryKey({ columns: [t.storeId, t.userId] }),
+    check('referral_credit_accounts_nonnegative', sql`${t.awardsCount} >= 0`),
   ],
 );
 

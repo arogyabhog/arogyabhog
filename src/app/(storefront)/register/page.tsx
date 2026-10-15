@@ -1,9 +1,16 @@
 import { register } from '@/app/(storefront)/login/actions';
+import { ReferralDeviceToken } from '@/components/ReferralDeviceToken';
 
 export const metadata = { title: 'Create account · ArogyaBhog' };
 
-export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const err = (await searchParams).error;
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; ref?: string }>;
+}) {
+  const params = await searchParams;
+  const err = params.error;
+  const referralPrefill = params.ref?.slice(0, 32).toUpperCase() ?? '';
   return (
     <main className="mx-auto flex max-w-6xl justify-center px-4 py-16 sm:px-6 sm:py-24">
       <div className="w-full max-w-sm space-y-6">
@@ -13,6 +20,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           <p className="text-sm text-ink-500">Needed for checkout, order tracking and referral credits.</p>
         </div>
         <form action={register} className="space-y-4 rounded-card border border-ivory-300 bg-white p-6 shadow-warm">
+          <ReferralDeviceToken />
           {err === '1' && (
             <p className="rounded-ctrl bg-danger-soft px-3 py-2 text-xs font-bold text-danger">
               Name too short, or password under 8 characters.
@@ -57,8 +65,14 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
             <input
               name="referral"
               placeholder="e.g. OWNER0001"
+              defaultValue={referralPrefill}
+              maxLength={32}
               className="w-full rounded-ctrl border border-ivory-300 bg-ivory-50 px-3 py-2.5 text-sm font-semibold text-ink-900 focus:border-forest-600 focus:outline-none"
             />
+            <span className="block text-xs leading-5 text-ink-500">
+              To flag referral abuse, we store a hash of a random browser token—not a fingerprint or IP address. It is a
+              review signal only.
+            </span>
           </label>
           <button
             type="submit"

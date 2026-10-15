@@ -17,6 +17,9 @@ import {
   inventoryMovements,
   products,
   productVariants,
+  referralCreditAccounts,
+  referrals,
+  stores,
   users,
 } from '../db/schema';
 import { SEED_STORE_ID, seedDatabase } from '../db/seed';
@@ -126,6 +129,12 @@ const couponCodeOf = async (p: Promise<unknown>): Promise<string | null> => {
     return null;
   } catch (error) {
     return error instanceof CouponError ? error.code : 'NON_COUPON_ERROR';
+  }
+};
+
+const deliverOrder = async (orderId: string) => {
+  for (const to of ['PREPARING', 'PREPARED', 'SHIPPED', 'DELIVERED']) {
+    await transitionFulfillment(db, { orderId, to, actorId: 'us_admin_seed' });
   }
 };
 
@@ -367,6 +376,26 @@ describe('premade orders', () => {
     expect(
       await db.select().from(couponRedemptions).where(eq(couponRedemptions.couponId, 'cp_order10')).all(),
     ).toHaveLength(2);
+    await db.insert(users).values({
+      id: 'us_cust_stack',
+      role: 'CUSTOMER',
+      storeId: null,
+      email: 'stack@test.local',
+      passwordHash: 'x',
+      referralCode: 'CUSTSTACK',
+      referredByCode: null,
+      freeDeliveryCredits: 1,
+    });
+    const stacked = await createPremadeOrder(
+      db,
+      premadeInput({ userId: 'us_cust_stack', couponCode: 'ORDER10', wantFreeDelivery: true }),
+    );
+    expect(stacked.snapshot.subtotalPaise).toBe(90000);
+    expect(stacked.snapshot.deliveryWaived).toBe(true);
+    expect(stacked.totalPaise).toBe(90000);
+    expect(await creditsOf('us_cust_stack')).toBe(0);
+    await cancelOrder(db, { orderId: stacked.orderId });
+    expect(await creditsOf('us_cust_stack')).toBe(1);
   });
 
   it('free-delivery coupons waive delivery without reducing the GST-inclusive item subtotal', async () => {
@@ -385,13 +414,153 @@ describe('premade orders', () => {
       active: true,
       createdBy: 'us_cust_credit',
     });
-    const created = await createPremadeOrder(db, premadeInput({ userId: 'us_cust_zero', couponCode: 'SHIPFREE' }));
+    await db.insert(users).values({
+      id: 'us_cust_shipfree',
+      role: 'CUSTOMER',
+      storeId: null,
+      email: 'shipfree@test.local',
+      passwordHash: 'x',
+      referralCode: 'CUSTSHIPFREE',
+      referredByCode: null,
+      freeDeliveryCredits: 1,
+    });
+    const created = await createPremadeOrder(
+      db,
+      premadeInput({ userId: 'us_cust_shipfree', couponCode: 'SHIPFREE', wantFreeDelivery: true }),
+    );
     expect(created.snapshot.subtotalPaise).toBe(95000);
     expect(created.snapshot.deliveryPaise).toBe(0);
     expect(created.snapshot.deliveryWaived).toBe(true);
     expect(created.snapshot.totalPaise).toBe(95000);
     expect(created.snapshot.coupon?.discountPaise).toBe(5000);
-    expect(await creditsOf('us_cust_zero')).toBe(0);
+    expect(await creditsOf('us_cust_shipfree')).toBe(1);
+    await cancelOrder(db, { orderId: created.orderId });
+    expect(await creditsOf('us_cust_shipfree')).toBe(1); // coupon waiver was never a redeemed referral credit
+  });
+
+  it('awards a referrer once on the referee’s first delivered order', async () => {
+    await db.insert(users).values([
+      {
+        id: 'us_referrer_award',
+        role: 'CUSTOMER',
+        storeId: null,
+        email: 'referrer-award@test.local',
+        passwordHash: 'x',
+        referralCode: 'REFERRERAWARD',
+        referredByCode: null,
+        freeDeliveryCredits: 1,
+      },
+      {
+        id: 'us_referee_award',
+        role: 'CUSTOMER',
+        storeId: null,
+        email: 'referee-award@test.local',
+        passwordHash: 'x',
+        referralCode: 'REFEREEAWARD',
+        referredByCode: 'REFERRERAWARD',
+        freeDeliveryCredits: 2,
+      },
+    ]);
+    await db.insert(referrals).values({
+      id: 'rf_award_once',
+      storeId: SEED_STORE_ID,
+      referrerUserId: 'us_referrer_award',
+      refereeUserId: 'us_referee_award',
+      referralCode: 'REFERRERAWARD',
+      signupDeviceHash: 'a'.repeat(64),
+      status: 'PENDING',
+      creditAwarded: false,
+    });
+    const created = await createPremadeOrder(db, premadeInput({ userId: 'us_referee_award' }));
+    expect(await creditsOf('us_referrer_award')).toBe(1);
+    expect(await db.select().from(referrals).where(eq(referrals.id, 'rf_award_once')).get()).toMatchObject({
+      status: 'PENDING',
+    });
+    await deliverOrder(created.orderId);
+    expect(await creditsOf('us_referrer_award')).toBe(2);
+    const referral = await db.select().from(referrals).where(eq(referrals.id, 'rf_award_once')).get();
+    expect(referral).toMatchObject({ status: 'CREDITED', creditAwarded: true, creditedOrderId: created.orderId });
+    expect(await codeOf(transitionFulfillment(db, { orderId: created.orderId, to: 'DELIVERED' }))).toBe(
+      'ILLEGAL_FULFILLMENT_TRANSITION',
+    );
+    expect(await creditsOf('us_referrer_award')).toBe(2);
+  });
+
+  it('enforces a lifetime per-store referral award cap even after an earned credit is spent', async () => {
+    await db.update(stores).set({ referralCreditCap: 1 }).where(eq(stores.id, SEED_STORE_ID));
+    try {
+      await db.insert(users).values([
+        {
+          id: 'us_referrer_lifetime_cap',
+          role: 'CUSTOMER',
+          storeId: null,
+          email: 'referrer-cap@test.local',
+          passwordHash: 'x',
+          referralCode: 'REFERRERLIFECAP',
+          referredByCode: null,
+          freeDeliveryCredits: 0,
+        },
+        {
+          id: 'us_referee_cap_one',
+          role: 'CUSTOMER',
+          storeId: null,
+          email: 'referee-cap-one@test.local',
+          passwordHash: 'x',
+          referralCode: 'REFEREECAPONE',
+          referredByCode: 'REFERRERLIFECAP',
+          freeDeliveryCredits: 2,
+        },
+        {
+          id: 'us_referee_cap_two',
+          role: 'CUSTOMER',
+          storeId: null,
+          email: 'referee-cap-two@test.local',
+          passwordHash: 'x',
+          referralCode: 'REFEREECAPTWO',
+          referredByCode: 'REFERRERLIFECAP',
+          freeDeliveryCredits: 2,
+        },
+      ]);
+      await db.insert(referrals).values({
+        id: 'rf_cap_first',
+        storeId: SEED_STORE_ID,
+        referrerUserId: 'us_referrer_lifetime_cap',
+        refereeUserId: 'us_referee_cap_one',
+        referralCode: 'REFERRERLIFECAP',
+        status: 'PENDING',
+        creditAwarded: false,
+      });
+      const first = await createPremadeOrder(db, premadeInput({ userId: 'us_referee_cap_one' }));
+      await deliverOrder(first.orderId);
+      expect(await creditsOf('us_referrer_lifetime_cap')).toBe(1);
+      await db.update(users).set({ freeDeliveryCredits: 0 }).where(eq(users.id, 'us_referrer_lifetime_cap'));
+
+      await db.insert(referrals).values({
+        id: 'rf_cap_second',
+        storeId: SEED_STORE_ID,
+        referrerUserId: 'us_referrer_lifetime_cap',
+        refereeUserId: 'us_referee_cap_two',
+        referralCode: 'REFERRERLIFECAP',
+        status: 'PENDING',
+        creditAwarded: false,
+      });
+      const second = await createPremadeOrder(db, premadeInput({ userId: 'us_referee_cap_two' }));
+      await deliverOrder(second.orderId);
+      expect(await creditsOf('us_referrer_lifetime_cap')).toBe(0); // spent balance does not reset lifetime cap
+      expect(await db.select().from(referrals).where(eq(referrals.id, 'rf_cap_second')).get()).toMatchObject({
+        status: 'CAPPED',
+        creditAwarded: false,
+        creditedOrderId: second.orderId,
+      });
+      const account = await db
+        .select()
+        .from(referralCreditAccounts)
+        .where(eq(referralCreditAccounts.userId, 'us_referrer_lifetime_cap'))
+        .get();
+      expect(account?.awardsCount).toBe(1);
+    } finally {
+      await db.update(stores).set({ referralCreditCap: 10 }).where(eq(stores.id, SEED_STORE_ID));
+    }
   });
 
   it('refuses checkout of a deactivated product or pack variant', async () => {

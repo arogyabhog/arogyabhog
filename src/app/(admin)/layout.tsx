@@ -85,6 +85,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Coupons
             </Link>
             <Link
+              href="/admin/referrals"
+              className="whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold text-ink-700 hover:bg-forest-50 hover:text-forest-800"
+            >
+              Referrals
+            </Link>
+            <Link
               href="/admin/settings"
               className="whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold text-ink-700 hover:bg-forest-50 hover:text-forest-800"
             >

@@ -8,8 +8,10 @@ import { db as schemaDb } from '@/db/client';
 import { couponRedemptions, coupons, orders, products, productVariants, stores } from '@/db/schema';
 import { SEED_STORE_ID } from '@/db/seed';
 import { applyCoupon, CouponError, type CouponRule } from '@/domain/coupon';
+import { OrderError } from '@/domain/order-engine';
 import { getCurrentUser, writeAudit } from '@/server/auth';
 import { createPremadeOrder } from '@/server/order-service';
+import { validateReferralCreditSelection } from '@/server/referral-validation';
 
 const db = schemaDb as unknown as LibSQLDatabase;
 const lineSchema = z
@@ -45,6 +47,7 @@ export async function placeOrders(formData: FormData): Promise<void> {
   const couponCode = String(formData.get('couponCode') ?? '')
     .trim()
     .toUpperCase();
+  const referralCreditsToUse = Number(String(formData.get('referralCreditsToUse') ?? '0'));
   if (
     contact.customerName.length < 2 ||
     contact.customerName.length > 120 ||
@@ -58,6 +61,13 @@ export async function placeOrders(formData: FormData): Promise<void> {
     couponCode.length > 32
   )
     redirect('/checkout?error=1');
+  const initialCreditError = validateReferralCreditSelection({
+    requested: referralCreditsToUse,
+    available: user.freeDeliveryCredits,
+    lineCount: lines.length,
+    couponType: null,
+  });
+  if (initialCreditError) redirect(`/checkout?creditError=${initialCreditError}`);
 
   // Resolve every line against the selected store before creating any sibling order.
   const resolved: Array<{ productId: string; packG: number; qty: number; subtotalPaise: number }> = [];
@@ -89,6 +99,7 @@ export async function placeOrders(formData: FormData): Promise<void> {
     });
   }
 
+  let couponType: string | null = null;
   if (couponCode) {
     const coupon = await db
       .select()
@@ -96,6 +107,14 @@ export async function placeOrders(formData: FormData): Promise<void> {
       .where(and(eq(coupons.storeId, SEED_STORE_ID), eq(coupons.code, couponCode)))
       .get();
     if (!coupon) redirect('/checkout?couponError=NOT_FOUND');
+    couponType = coupon.type;
+    const couponCreditError = validateReferralCreditSelection({
+      requested: referralCreditsToUse,
+      available: user.freeDeliveryCredits,
+      lineCount: lines.length,
+      couponType,
+    });
+    if (couponCreditError) redirect(`/checkout?creditError=${couponCreditError}`);
     const store = await db.select().from(stores).where(eq(stores.id, SEED_STORE_ID)).get();
     if (!store) redirect('/checkout?error=1');
     for (const line of resolved) {
@@ -128,7 +147,7 @@ export async function placeOrders(formData: FormData): Promise<void> {
   }
 
   const ids: string[] = [];
-  for (const line of resolved) {
+  for (const [lineIndex, line] of resolved.entries()) {
     try {
       const created = await createPremadeOrder(db, {
         storeId: SEED_STORE_ID,
@@ -138,12 +157,15 @@ export async function placeOrders(formData: FormData): Promise<void> {
         userId: user.id,
         contact,
         paymentMethod,
-        wantFreeDelivery: false,
+        wantFreeDelivery: lineIndex < referralCreditsToUse,
         ...(couponCode ? { couponCode } : {}),
       });
       ids.push(created.orderId);
     } catch (error) {
       if (error instanceof CouponError) redirect(`/checkout?couponError=${error.code}`);
+      if (error instanceof OrderError && error.code === 'CREDIT_NOT_AVAILABLE') {
+        redirect('/checkout?creditError=NO_CREDITS');
+      }
       throw error;
     }
   }
@@ -152,7 +174,12 @@ export async function placeOrders(formData: FormData): Promise<void> {
     action: 'order.placed',
     entityType: 'order',
     entityId: ids.join('+'),
-    after: { paymentMethod, lines, couponCode: couponCode || null },
+    after: {
+      paymentMethod,
+      lines,
+      couponCode: couponCode || null,
+      referralCreditsUsed: couponType === 'FREE_DELIVERY' ? 0 : referralCreditsToUse,
+    },
   });
   redirect(ids.length === 1 ? `/orders/${ids[0]}?placed=1` : '/orders?placed=1');
 }

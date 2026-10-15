@@ -22,6 +22,28 @@ export default async function OrdersPage() {
         <h1 className="font-display text-3xl font-semibold text-ink-900">Every pack, tracked</h1>
       </div>
       <div className="gold-rule mt-6" />
+      <section className="mt-8 grid gap-4 rounded-card border border-gold-400 bg-white p-5 shadow-warm sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-forest-700">Share ArogyaBhog</p>
+          <h2 className="mt-1 font-display text-xl font-semibold text-ink-900">
+            Your referral code: <span className="tnum text-forest-800">{user.referralCode}</span>
+          </h2>
+          <p className="mt-1 text-sm text-ink-600">
+            Friends who join with your code start with two delivery credits. Earn one more after their first delivered
+            order, subject to the store cap.
+          </p>
+          <a
+            href={`/register?ref=${encodeURIComponent(user.referralCode)}`}
+            className="mt-2 inline-block text-sm font-bold text-forest-700 hover:underline"
+          >
+            Share sign-up link →
+          </a>
+        </div>
+        <div className="rounded-xl bg-forest-50 px-5 py-4 text-center">
+          <div className="tnum font-display text-3xl font-bold text-forest-900">{user.freeDeliveryCredits}</div>
+          <div className="text-xs font-semibold text-forest-800">delivery credits</div>
+        </div>
+      </section>
       <div className="mt-8 space-y-4 pb-16">
         {mine.length === 0 && (
           <div className="rounded-card border border-ivory-300 bg-white p-10 text-center shadow-warm">

@@ -115,7 +115,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 Coupon {order.couponCodeUsed} saved {inr(order.couponDiscountPaise)}.
               </p>
             )}
-            {order.deliveryWaived && !order.couponId && (
+            {order.deliveryWaived && order.couponType !== 'FREE_DELIVERY' && (
               <p className="text-xs text-leaf">Delivery waived via referral credit 🎉</p>
             )}
           </div>

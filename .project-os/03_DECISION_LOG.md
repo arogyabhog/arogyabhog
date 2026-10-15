@@ -861,3 +861,16 @@ real deployment.
 7. Create, edit, activate, and deactivate actions write before/after audit rows in their transaction. Managers can affect only their assigned store; admins may select any store.
 
 **Consequences:** Migration `0007_moaning_wild_pack.sql` adds coupons, redemptions, and nullable order coupon snapshots without rebuilding legacy orders. The destructive down migration removes all coupon definitions, redemption history, and order coupon fields. Migration application/rollback must be verified before release. Coupon records are retained, never hard-deleted.
+
+## ADR-040 — Referral attribution, first-delivery awards, and abuse review
+**Status:** Implemented locally on `feat/admin-referrals` (2026-10-15); final verification/commit pending.
+**Implements:** ADR-014, ADR-015, ADR-017, ADR-027, ADR-032, ADR-039.
+
+**Decision:**
+1. Add an append-only `referrals` row for each valid referral signup, uniquely keyed by referee, store, referrer, and code. The referred account starts with two credits; organic signup remains one. Unknown codes retain the existing silent-ignore behavior. Referral code entropy is increased to 64 random bits.
+2. Award exactly one credit on the referee’s first `DELIVERED` order, inside the fulfillment transaction. A conditional order-state update protects the transition; `referral_credit_accounts` atomically reserves a per-referrer/per-store lifetime award slot below `stores.referral_credit_cap`, so spending credits does not reopen the cap. The referral outcome is `CREDITED` or `CAPPED`, with the qualifying order recorded. Audit and order events record both outcomes.
+3. Use the user-approved abuse signal: a random 128-bit first-party browser token is kept in localStorage and only its SHA-256 digest is stored on valid referral rows. It is disclosed at signup, never used to block accounts/orders, and is not browser fingerprinting or IP collection. Admin sees repeated-hash and no-order warnings only.
+4. `/admin/referrals` is read-only and store-scoped; it shows pending/credited/capped outcomes and review signals. Customers see their referral code/share link and balance in order history.
+5. Referral credits stack with percent/flat item coupons, but not with free-delivery coupons. Checkout selects a credit count and applies one to each of the first N sibling line-orders. Credit deductions are conditional/transactional; eligible cancellations refund actually redeemed credits. A free-delivery coupon does not consume or refund a referral credit.
+
+**Consequences:** Migration `0008_petite_sunspot.sql` creates the referral ledger; `0009_tense_mentallo.sql` adds an atomic per-store lifetime award counter. Their down migrations destroy referral attribution, cap counters, and abuse-signal history. Current v1 signup/checkout uses the seed store; the ledger records the store at signup and updates it to the delivered-order store at award. Credit balances remain on the user account; referral status is the award idempotency/audit source.
