@@ -863,7 +863,7 @@ real deployment.
 **Consequences:** Migration `0007_moaning_wild_pack.sql` adds coupons, redemptions, and nullable order coupon snapshots without rebuilding legacy orders. The destructive down migration removes all coupon definitions, redemption history, and order coupon fields. Migration application/rollback must be verified before release. Coupon records are retained, never hard-deleted.
 
 ## ADR-040 — Referral attribution, first-delivery awards, and abuse review
-**Status:** Implemented locally on `feat/admin-referrals` (2026-10-15); final verification/commit pending.
+**Status:** Implemented and verified on `feat/admin-referrals` (2026-10-15); commit `4739dba` pushed to origin, awaiting user review; not merged.
 **Implements:** ADR-014, ADR-015, ADR-017, ADR-027, ADR-032, ADR-039.
 
 **Decision:**
