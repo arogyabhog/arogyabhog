@@ -846,7 +846,7 @@ real deployment.
 **Consequences:** New `/admin/inventory` gives scoped balances/history and audited purchase, wastage, and signed adjustment forms. Legacy orders remain outside the ledger; no invented physical count or historical consumption. Down migration is intentionally destructive and documented.
 
 ## ADR-039 — Store-scoped coupons and immutable order redemptions
-**Status:** Implemented and verified on `feat/admin-coupons` (2026-10-15); local commit `a2e3fbd`; push blocked by SSH public-key authentication after configuring `origin`.
+**Status:** Implemented, verified, and pushed on `feat/admin-coupons` (2026-10-15); feature commit `a2e3fbd`; branch not merged.
 **Implements:** ADR-014, ADR-015, ADR-027, ADR-032.
 
 **Context:** Admins need per-store offers without rewriting past orders or trusting a browser-submitted coupon result. The checkout engine creates one sibling order per cart line, and item prices are GST-inclusive.
